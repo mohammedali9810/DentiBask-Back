@@ -9,11 +9,11 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-<<<<<<< HEAD
+
 import os.path
-=======
+
 import os
->>>>>>> Ashraf
+
 from pathlib import Path
 from django.contrib.messages import constants as messages
 
@@ -42,17 +42,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-<<<<<<< HEAD
     'User',
     'Products',
     'rest_framework',
-    'django_cleanup'
-=======
-    'rest_framework',
-    'Products',
-    'User',
+    'django_cleanup',
     'api'
->>>>>>> Ashraf
 ]
 
 MIDDLEWARE = [
@@ -91,21 +85,12 @@ WSGI_APPLICATION = 'DentiBask.wsgi.application'
 
 DATABASES = {
     'default': {
-<<<<<<< HEAD
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'dentibask',
-        'USER' : '',
-        'PASSWORD' : '',
+        'USER' : 'postgres',
+        'PASSWORD' : 'admin',
         'HOST' : 'localhost',
         'PORT' : '5432'
-=======
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': '',
-        'USER': '',
-        'PASSWORD': '',
-        'HOST': 'localhost',
-        'PORT': '5432',
->>>>>>> Ashraf
     }
 }
 

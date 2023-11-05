@@ -72,3 +72,15 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order for {self.user.username}"
+
+############---------Cart MODEL---------############
+class Cart(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+############---------Cart-Items MODEL---------############
+class Cart_Items(models.Model):
+    id = models.AutoField(primary_key=True)
+    cart_id = models.OneToOneField(Cart, on_delete=models.CASCADE)
+    product_id = models.ForeignKey(Product)
+    quantity = models.IntegerField()

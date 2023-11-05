@@ -1,4 +1,5 @@
 from django.db import models
+from User.models import Vendor
 
 # Create your models here.
 ############---------Category MODEL---------############

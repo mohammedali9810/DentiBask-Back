@@ -1,5 +1,5 @@
 from django.db import models
-from User.models import Vendor
+
 # Create your models here.
 ############---------Category MODEL---------############
 class Category(models.Model):
@@ -7,8 +7,8 @@ class Category(models.Model):
     name = models.CharField(max_length=200)
     desc = models.TextField()
     image = models.ImageField(null=False, blank=False)
-    #Admin_id
 
+    #Admin_id
     def __str__(self):
         return self.name
 
@@ -20,7 +20,9 @@ class Product(models.Model):
     price = models.FloatField()
     image = models.ImageField(null=False, blank=False)
     Categ_id = models.ForeignKey(Category) #, on_delete=models.CASCADE#
-    vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    # vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    ## add stock
+    stock = models.IntegerField(default=0)
 
     def get_img(self):
         return f"/media/{self.image}"

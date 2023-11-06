@@ -10,8 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-import os.path
-
 import os
 
 from pathlib import Path
@@ -42,11 +40,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'User',
-    'Products',
     'rest_framework',
     'django_cleanup',
-    'api'
+    'api',
+    'User',
+    'Products',
 ]
 
 MIDDLEWARE = [

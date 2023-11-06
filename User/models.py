@@ -45,6 +45,7 @@ class Pay_inf(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     card_name = models.CharField(max_length=200)
     exp_date = models.DateField()
+    card_num = models.IntegerField(max_length=16)
 
 ############---------User/Vendor-Info MODEL---------############
 class Add_info(models.Model):

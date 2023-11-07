@@ -55,6 +55,13 @@ class Add_info(models.Model):
 class Order(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    STATUS_CHOICES = [
+        ('Cancelled', 'Cancelled'),
+        ('Processing', 'Processing'),
+        ('Shipped', 'Shipped'),
+        ('Delivered', 'Delivered'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Processing')
     created_at = models.DateTimeField(auto_now_add=True)
 
 ############---------OrderItem MODEL---------############

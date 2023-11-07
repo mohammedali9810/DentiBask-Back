@@ -69,6 +69,8 @@ class OrderItem(models.Model):
 ############---------Clinic MODEL---------############
 class Clinic(models.Model):
     id = models.AutoField(primary_key=True)
+    title = models.CharField(max_length=30)
+    desc = models.TextField(blank=True)
     location = models.CharField(max_length=50)
     area = models.FloatField()
     price = models.DecimalField(decimal_places=2, max_digits=2,default=0)

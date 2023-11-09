@@ -7,7 +7,8 @@ from django.contrib.auth.models import User
 ############---------Customer MODEL---------############
 class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    name = models.CharField(max_length=200)
+    fname = models.CharField(max_length=200)
+    lname = models.CharField(max_length=200)
     email = models.EmailField()
     phone = models.CharField(max_length=11,
         validators=[

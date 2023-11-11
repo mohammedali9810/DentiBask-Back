@@ -1,6 +1,8 @@
 from django.db import models
 import os
 from django.utils import timezone
+# views.py
+
 
 
 def unique_image_name(instance, filename):
@@ -16,8 +18,6 @@ class Category(models.Model):
     image = models.ImageField(null=False, blank=False,upload_to=unique_image_name)
 
     #Admin_id
-    def __str__(self):
-        return self.name
 
 def unique_image_product(instance, filename):
     base, extension = os.path.splitext(filename)

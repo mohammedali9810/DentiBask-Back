@@ -40,8 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'storages',
     'corsheaders',
+    'storages',
     'rest_framework',
     'django_cleanup',
     'api',
@@ -59,6 +59,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'DentiBask.urls'
 
@@ -126,12 +127,26 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
+CSRF_TRUSTED_ORIGINS = ["http://localhost:3000",]
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000",]
+
+CSRF_COOKIE_SAMESITE = None  # or 'Lax'
+CSRF_COOKIE_SECURE = False
+CSRF_USE_SESSIONS = True  # To use CSRF tokens for AJAX requests
+
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'X-CSRFTOKEN',
+    'csrftoken',
+    'X-XSRF-TOKEN',
+    'content-type',
+    'x-requested-with',
+    'Authorization',
+    'Set-Cookie'
 ]
 
 STATIC_URL = 'static/'
@@ -166,4 +181,3 @@ AWS_QUERYSTRING_AUTH = False
 # AWS_S3_OBJECT_PARAMETERS = {
 #     'StorageClass': 'STANDARD_IA'
 # }
-

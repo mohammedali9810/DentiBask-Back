@@ -4,7 +4,7 @@ from rest_framework import viewsets, pagination
 from rest_framework.response import Response
 
 class CustomPagination(pagination.PageNumberPagination):
-    page_size = 9  # Number of items per page
+    page_size = 12  # Number of items per page
     page_size_query_param = 'page_size'  # Allows clients to change the page size by providing a query parameter
     max_page_size = 1000  # Maximum number of items that can be requested per page
 

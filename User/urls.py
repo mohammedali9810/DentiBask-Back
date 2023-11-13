@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet, RentViewSet, AddInfoViewSet,
-                  PayInfoViewSet, MyObtainToken, check_email,add_clinic)
+                  PayInfoViewSet, MyObtainToken, check_email,add_clinic,get_user_clinic)
 
 router = DefaultRouter()
 router.register('order', OrderViewSet)
@@ -17,5 +17,6 @@ urlpatterns = [
     path('login/', MyObtainToken.as_view(), name='token_obtain_pair'),
     path('checkemail/', check_email, name='check_email'),
     path('addclinic/', add_clinic, name='add_clinic'),
+    path('userclinic/', get_user_clinic, name='get_user_clinic'),
 
 ]

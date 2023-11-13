@@ -7,6 +7,10 @@ from django.core.validators import RegexValidator
 from django.contrib.auth.models import User
 # Create your models here.
 
+def unique_image_customer(instance, filename):
+    base, extension = os.path.splitext(filename)
+    timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+    return f'images/customer/{base}_{timestamp}{extension}'
 ############---------Customer MODEL---------############
 class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
@@ -20,9 +24,10 @@ class Customer(models.Model):
                 code="invalid number",
             )
         ], blank=True)
+    image = models.ImageField(upload_to=unique_image_customer)
 
     def __str__(self):
-        return self.name
+        return self.email
 
 
 ############---------Payment-Info MODEL---------############

@@ -26,7 +26,7 @@ class ClinicViewSet(viewsets.ModelViewSet):
     queryset = Clinic.objects.all()
     serializer_class = ClinicSeriallizer
     lookup_field = 'pk'
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSeriallizer
@@ -76,6 +76,7 @@ def check_email(request):
         print(customer)
         return Response({"msg": "email found."}, status=status.HTTP_200_OK)
     return Response({"msg": "email Not found."}, status=status.HTTP_400_BAD_REQUEST)
+<<<<<<< HEAD
 
 def activate_account(request, uidb64, token):
     try:
@@ -104,3 +105,42 @@ def register(request):
 def get_csrf_token(request):
     token = get_token(request)
     return JsonResponse({'csrfToken': token})
+=======
+from rest_framework.exceptions import ValidationError
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_clinic(request):
+    title = request.data.get('title')
+    location = request.data.get('location')
+    area = request.data.get('area')
+    price = request.data.get('price')
+    image = request.data.get('image')
+    desc = request.data.get('desc')
+    customer_id = request.auth.payload.get("user_id")
+    customer = Customer.objects.get(pk=customer_id)
+    # Validate required fields
+    if not all([title, location, area, price, image]):
+        raise ValidationError({"msg": "Missing required fields."}, code=status.HTTP_400_BAD_REQUEST)
+
+    # Validate numeric fields
+    try:
+        area = float(area)
+        price = float(price)
+    except ValueError:
+        raise ValidationError({"msg": "Invalid numeric values for area or price."}, code=status.HTTP_400_BAD_REQUEST)
+
+    Clinic.objects.create(title=title, desc=desc, user=customer, location=location, area=area, price=price, image=image)
+    return Response({"msg": "Clinic added."}, status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_clinic(request):
+    customer_id = request.auth.payload.get("user_id")
+    clinics = Clinic.objects.filter(user=customer_id)
+    serializer = ClinicSeriallizer(clinics, many=True)
+    serialized_clinics = serializer.data
+
+    return Response({"clinics": serialized_clinics}, status=status.HTTP_200_OK)
+
+>>>>>>> 219cd2465c6160848d7ede8e9238bf659bb682a4

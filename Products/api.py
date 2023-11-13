@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from .models import Product,Category
 from .seriallizer import ProductSeriallizer, CategorySeriallizer
 from rest_framework import viewsets, pagination, permissions
@@ -35,9 +36,46 @@ class ProductViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
 
         return Response(serializer.data)
+    def list(self, request, *args, **kwargs):
+        category_name = request.query_params.get('category', None)
 
+        if category_name:
+            category = get_object_or_404(Category, name=category_name)
+            queryset = Product.objects.filter(Categ_id=category)
+        else:
+            queryset = Product.objects.all()
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def get_queryset(self):
+        name = self.request.query_params.get('name', None)
+        if name:
+            return Product.objects.filter(name__icontains=name)
+        return Product.objects.all()
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySeriallizer
     lookup_field = 'pk'
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+
+@api_view(['GET'])
+def get_all_products(request):
+    paginator = CustomPagination()
+    products = Product.objects.all()
+    paginated_products = paginator.paginate_queryset(products, request)
+
+    # Serialize the paginated products
+    serializer = ProductSeriallizer(paginated_products, many=True)
+    serialized_products = serializer.data
+
+    # Return the paginated response
+    return paginator.get_paginated_response(serialized_products)
+
+

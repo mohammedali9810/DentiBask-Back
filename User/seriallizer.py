@@ -20,7 +20,7 @@ class CustomerSeriallizer(serializers.ModelSerializer):
         user_data = {
             'username': validated_data['email'],
             'email': validated_data['email'],
-            'password': validated_data['password']
+            'password': validated_data['password'],
         }
 
         # Create User and Customer

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    'storages',
     'rest_framework',
     'django_cleanup',
     'api',
@@ -58,6 +59,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'DentiBask.urls'
 
@@ -88,8 +90,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'dentibask',
         'USER' : 'postgres',
-        'PASSWORD' : 'admin',
-        'HOST' : 'localhost',
+        'PASSWORD' : 'admin123',
+        'HOST' : 'dentibask.cyskv5u5tbbd.us-east-1.rds.amazonaws.com',
         'PORT' : '5432'
     }
 }
@@ -125,19 +127,57 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5000",
+CSRF_TRUSTED_ORIGINS = ["http://localhost:3000",]
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000",]
+
+CSRF_COOKIE_SAMESITE = None  # or 'Lax'
+CSRF_COOKIE_SECURE = False
+CSRF_USE_SESSIONS = True  # To use CSRF tokens for AJAX requests
+
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'X-CSRFTOKEN',
+    'csrftoken',
+    'X-XSRF-TOKEN',
+    'content-type',
+    'x-requested-with',
+    'Authorization',
+    'Set-Cookie'
 ]
 
 STATIC_URL = 'static/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# AWS S3 settings
+# Use the 'storages' backend for file storage
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+
+AWS_ACCESS_KEY_ID = 'AKIATJURKRSNIHV22QKX'
+AWS_SECRET_ACCESS_KEY = 'uTLxigguIjGmJY3jQKaGQKij2NF7M3nDqbfxnZ3L'
+AWS_STORAGE_BUCKET_NAME = 'dentibaskbucket'
+AWS_QUERYSTRING_AUTH = False
+
+# Optional: Specify custom S3 endpoint (e.g., for using a service like MinIO)
+# AWS_S3_ENDPOINT_URL = 'https://your-custom-endpoint.com'
+
+# Optional: Use a custom domain for serving files from S3
+# AWS_S3_CUSTOM_DOMAIN = 'your-custom-domain.com'
+
+# Optional: Control the default ACL for the objects stored in S3
+# AWS_DEFAULT_ACL = 'public-read'  # or 'private' or 'authenticated-read' or 'bucket-owner-full-control'
+
+# Optional: Set the storage class for the S3 bucket
+# AWS_S3_OBJECT_PARAMETERS = {
+#     'StorageClass': 'STANDARD_IA'
+# }

@@ -30,7 +30,7 @@ class Pay_inf(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     card_name = models.CharField(max_length=200)
     exp_date = models.DateField()
-    card_num = models.IntegerField(max_length=16)
+    card_num = models.IntegerField()
 
 ############---------User/Vendor-Info MODEL---------############
 class Add_info(models.Model):
@@ -40,12 +40,10 @@ class Add_info(models.Model):
     address = models.TextField()
     pay_inf = models.ForeignKey(Pay_inf, on_delete=models.CASCADE)
     country = models.CharField(max_length=40, blank=True)
-    image = models.ImageField(default="default.jpg", upload_to="profile_pics", blank=True)
+    image = models.ImageField(default="default.jpg", upload_to="addinfo/profile_pics", blank=True)
 
     def __str__(self):
-        if self.vendor:
-            return f"Vendor: {self.vendor.name}"
-        elif self.customer:
+        if self.customer:
             return f"Customer: {self.customer.name}"
         else:
             return "No associated user"
@@ -104,6 +102,13 @@ class Rent(models.Model):
                     + (self.end_date.month - self.start_date.month)
             )
         super(Rent, self).save(*args, **kwargs)
+
+class Transaction(models.Model):
+    id = models.AutoField(primary_key=True)
+    amount = models.IntegerField()
+    created_at = models.DateField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
 
 
 

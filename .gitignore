@@ -1,3 +1,9 @@
 .idea
 db.sqlite3
 env
+User/migrations
+api/migrations
+Products/migrations
+__pycache__
+migrations
+

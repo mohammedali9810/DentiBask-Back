@@ -16,6 +16,7 @@ from django.utils.http import urlsafe_base64_decode
 from .seriallizer import CustomerSerializer
 from rest_framework.permissions import AllowAny
 from django.middleware.csrf import get_token
+from rest_framework.exceptions import ValidationError
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -95,7 +96,6 @@ def check_email(request):
         return Response({"msg": "email found."}, status=status.HTTP_200_OK)
     return Response({"msg": "email Not found."}, status=status.HTTP_400_BAD_REQUEST)
 
-
 def activate_account(request, uidb64, token):
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
@@ -125,8 +125,7 @@ def register(request):
 def get_csrf_token(request):
     token = get_token(request)
     return JsonResponse({'csrfToken': token})
-
-
+  
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_clinic(request):
@@ -208,3 +207,4 @@ def delete_user(request):
     except:
         return Response({"msg": "Can not find user or customer."}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"msg": "User Found."}, status=status.HTTP_204_NO_CONTENT)
+

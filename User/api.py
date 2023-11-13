@@ -1,4 +1,8 @@
-from rest_framework import viewsets
+from django.contrib.auth import authenticate
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 from .models import Customer,Pay_inf,Add_info,Order,OrderItem,Clinic,Rent
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSeriallizer,
                           OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer,PayInfoSeriallizer)
@@ -33,3 +37,16 @@ class AddInfoViewSet(viewsets.ModelViewSet):
     serializer_class = AddInfoSeriallizer
     lookup_field = 'pk'
 
+class MyObtainToken(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        username = request.data.get("username")
+        password = request.data.get("password")
+        if not username or not password:
+            return Response({"error": "Both username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            token = super().post(request, *args, **kwargs).data
+            return Response({"token": token})
+        else:
+            return Response({"error": "Invalid username or password."}, status=status.HTTP_401_UNAUTHORIZED)

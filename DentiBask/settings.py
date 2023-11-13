@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework_simplejwt',
     'corsheaders',
     'storages',
     'rest_framework',
@@ -130,13 +131,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
+<<<<<<< HEAD
+CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
+# CORS_ALLOWED_ORIGINS = ["http://localhost:3000",]
+CORS_ALLOW_ALL_ORIGINS = True
+=======
 CSRF_TRUSTED_ORIGINS = ["http://localhost:3000",]
 CORS_ALLOWED_ORIGINS = ["http://localhost:3000",]
 # CORS_ALLOW_ALL_ORIGINS = True
+>>>>>>> 219cd2465c6160848d7ede8e9238bf659bb682a4
 
 
 CSRF_COOKIE_SAMESITE = None  # or 'Lax'
-CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = True
 CSRF_USE_SESSIONS = True  # To use CSRF tokens for AJAX requests
 
 

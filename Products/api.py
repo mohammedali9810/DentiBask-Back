@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 
 from .models import Product,Category
 from .seriallizer import ProductSeriallizer, CategorySeriallizer
-from rest_framework import viewsets, pagination
+from rest_framework import viewsets, pagination, permissions
 from rest_framework.response import Response
 
 from django.middleware.csrf import get_token
@@ -25,7 +25,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSeriallizer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-
+    permission_classes = [permissions.IsAuthenticated]
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         partial = kwargs.pop('partial', False)

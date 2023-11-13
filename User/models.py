@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     name = models.CharField(max_length=200)
-    email = models.EmailField()
+    email = models.EmailField(unique=True)
     phone = models.CharField(max_length=11,
         validators=[
             RegexValidator(
@@ -107,25 +107,3 @@ class Transaction(models.Model):
     amount = models.IntegerField()
     created_at = models.DateField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-
-
-
-## Not Needed !!!
-# ############---------Vendor MODEL---------############
-# class Vendor(models.Model):
-#     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-#     name = models.CharField(max_length=200)
-#     email = models.EmailField()
-#     phone = models.CharField(max_length=11,
-#         validators=[
-#             RegexValidator(
-#                 regex="^01[0|1|2|5][0-9]{8}$",
-#                 message="Phone must start with 010, 011, 012, or 015 and contain 11 digits",
-#                 code="invalid number",
-#             )
-#         ], blank=True)
-#     def __str__(self):
-#         return self.name
-
-## not needed !!!

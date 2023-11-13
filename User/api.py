@@ -76,7 +76,6 @@ def check_email(request):
         print(customer)
         return Response({"msg": "email found."}, status=status.HTTP_200_OK)
     return Response({"msg": "email Not found."}, status=status.HTTP_400_BAD_REQUEST)
-<<<<<<< HEAD
 
 def activate_account(request, uidb64, token):
     try:
@@ -105,7 +104,6 @@ def register(request):
 def get_csrf_token(request):
     token = get_token(request)
     return JsonResponse({'csrfToken': token})
-=======
 from rest_framework.exceptions import ValidationError
 
 @api_view(['POST'])
@@ -143,4 +141,3 @@ def get_user_clinic(request):
 
     return Response({"clinics": serialized_clinics}, status=status.HTTP_200_OK)
 
->>>>>>> 219cd2465c6160848d7ede8e9238bf659bb682a4

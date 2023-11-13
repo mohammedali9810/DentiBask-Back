@@ -1,10 +1,8 @@
-from django.shortcuts import get_object_or_404
-
 from .models import Product,Category
 from .seriallizer import ProductSeriallizer, CategorySeriallizer
 from rest_framework import viewsets, pagination, permissions
 from rest_framework.response import Response
-
+from rest_framework.decorators import permission_classes, api_view
 from django.middleware.csrf import get_token
 from django.http import JsonResponse
 
@@ -12,8 +10,6 @@ from django.http import JsonResponse
 def get_csrf_token(request):
     token = get_token(request)
     return JsonResponse({'csrfToken': token})
-
-
 
 class CustomPagination(pagination.PageNumberPagination):
     page_size = 12  # Number of items per page
@@ -25,7 +21,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSeriallizer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         partial = kwargs.pop('partial', False)
@@ -44,3 +40,4 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySeriallizer
     lookup_field = 'pk'
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]

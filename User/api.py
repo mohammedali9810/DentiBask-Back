@@ -1,8 +1,9 @@
 from django.contrib.auth import authenticate
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-
+from rest_framework.decorators import permission_classes, api_view
 from .models import Customer,Pay_inf,Add_info,Order,OrderItem,Clinic,Rent
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSeriallizer,
                           OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer,PayInfoSeriallizer)
@@ -11,11 +12,13 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSeriallizer
     lookup_field = 'pk'
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 class ClinicViewSet(viewsets.ModelViewSet):
     queryset = Clinic.objects.all()
     serializer_class = ClinicSeriallizer
     lookup_field = 'pk'
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSeriallizer
@@ -32,6 +35,7 @@ class PayInfoViewSet(viewsets.ModelViewSet):
     queryset = Pay_inf.objects.all()
     serializer_class = PayInfoSeriallizer
     lookup_field = 'pk'
+
 class AddInfoViewSet(viewsets.ModelViewSet):
     queryset = Add_info.objects.all()
     serializer_class = AddInfoSeriallizer
@@ -50,3 +54,17 @@ class MyObtainToken(TokenObtainPairView):
             return Response({"token": token})
         else:
             return Response({"error": "Invalid username or password."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['GET'])
+def check_email(request):
+    email = request.GET.get('username')
+    print(email)
+    try:
+        customer = Customer.objects.get(email=email)
+    except:
+        return Response({"msg": "email Not found."}, status=status.HTTP_400_BAD_REQUEST)
+    if customer:
+        print(customer)
+        return Response({"msg": "email found."}, status=status.HTTP_200_OK)
+    return Response({"msg": "email Not found."}, status=status.HTTP_400_BAD_REQUEST)

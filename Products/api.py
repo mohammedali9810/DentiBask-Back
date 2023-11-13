@@ -22,7 +22,8 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSeriallizer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         partial = kwargs.pop('partial', False)
@@ -37,10 +38,15 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
     def list(self, request, *args, **kwargs):
-        category_name = request.query_params.get('category', None)
+        category_name = request.query_params.get('name', None)
 
         if category_name:
             category = get_object_or_404(Category, name=category_name)
+            #ToDo
+            # take the name of category and find the id of that name catgory from Catgorey model
+            category_id = category.id  # Get the ID of the category
+            queryset = Product.objects.filter(Categ_id=category_id)
+      
             queryset = Product.objects.filter(Categ_id=category)
         else:
             queryset = Product.objects.all()
@@ -58,8 +64,13 @@ class ProductViewSet(viewsets.ModelViewSet):
         if name:
             return Product.objects.filter(name__icontains=name)
         return Product.objects.all()
+    
+    def retrieve_by_id(self, request, pk=None):
+        product = self.get_object()
+        serializer = self.get_serializer(product)
+        return Response(serializer.data)
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySeriallizer
     lookup_field = 'pk'
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]

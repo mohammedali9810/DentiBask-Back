@@ -1,4 +1,4 @@
-import datetime
+from django.utils import timezone
 import os
 
 from django.db import models
@@ -75,7 +75,7 @@ class OrderItem(models.Model):
 
 def unique_image_clinic(instance, filename):
     base, extension = os.path.splitext(filename)
-    timestamp = datetime.timezone.now().strftime('%Y%m%d%H%M%S')
+    timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
     return f'images/clinic/{base}_{timestamp}{extension}'
 ############---------Clinic MODEL---------############
 class Clinic(models.Model):
@@ -84,8 +84,8 @@ class Clinic(models.Model):
     desc = models.TextField(blank=True)
     location = models.CharField(max_length=50)
     area = models.FloatField()
-    price = models.DecimalField(decimal_places=2, max_digits=2,default=0)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    price = models.FloatField(default=0)
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
     image = models.ImageField(upload_to=unique_image_clinic)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

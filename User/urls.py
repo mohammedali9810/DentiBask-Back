@@ -20,5 +20,4 @@ urlpatterns = [
     path('api/register/', register, name='register')
     path('addclinic/', add_clinic, name='add_clinic'),
     path('userclinic/', get_user_clinic, name='get_user_clinic'),
-
 ]

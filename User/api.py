@@ -7,6 +7,14 @@ from rest_framework.decorators import permission_classes, api_view
 from .models import Customer,Pay_inf,Add_info,Order,OrderItem,Clinic,Rent
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSeriallizer,
                           OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer,PayInfoSeriallizer)
+from .token import account_activation_token
+from django.contrib.auth.models import User
+from django.http import JsonResponse
+from django.utils.http import urlsafe_base64_decode
+from .seriallizer import CustomerSerializer
+from rest_framework.permissions import AllowAny
+from django.middleware.csrf import get_token
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -68,3 +76,31 @@ def check_email(request):
         print(customer)
         return Response({"msg": "email found."}, status=status.HTTP_200_OK)
     return Response({"msg": "email Not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+def activate_account(request, uidb64, token):
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and account_activation_token.check_token(user, token):
+        user.is_active = True
+        user.save()
+        return JsonResponse({'message': 'Activation successful'})
+    else:
+        return JsonResponse({'error': 'Invalid activation link'}, status=400)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register(request):
+    serializer = CustomerSerializer(data=request.data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+def get_csrf_token(request):
+    token = get_token(request)
+    return JsonResponse({'csrfToken': token})

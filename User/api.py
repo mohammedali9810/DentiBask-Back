@@ -94,3 +94,14 @@ def add_clinic(request):
 
     Clinic.objects.create(title=title, desc=desc, user=customer, location=location, area=area, price=price, image=image)
     return Response({"msg": "Clinic added."}, status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_clinic(request):
+    customer_id = request.auth.payload.get("user_id")
+    clinics = Clinic.objects.filter(user=customer_id)
+    serializer = ClinicSeriallizer(clinics, many=True)
+    serialized_clinics = serializer.data
+
+    return Response({"clinics": serialized_clinics}, status=status.HTTP_200_OK)
+

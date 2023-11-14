@@ -100,19 +100,7 @@ def check_email(request):
         return Response({"msg": "email found."}, status=status.HTTP_200_OK)
     return Response({"msg": "email Not found."}, status=status.HTTP_400_BAD_REQUEST)
 
-def activate_account(request, uidb64, token):
-    try:
-        uid = urlsafe_base64_decode(uidb64).decode()
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
 
-    if user is not None and account_activation_token.check_token(user, token):
-        user.is_active = True
-        user.save()
-        return JsonResponse({'message': 'Activation successful'})
-    else:
-        return JsonResponse({'error': 'Invalid activation link'}, status=400)
 
 
 # @api_view(['POST'])
@@ -134,11 +122,12 @@ def register(request):
         customer = serializer.save()
 
         # Send activation email
-        current_site = get_current_site(request)
+        # current_site = get_current_site(request)
+        custom_activation_url = "localhost:3000/activate"
         mail_subject = 'Activation link has been sent to your email id'
         message = render_to_string('acc_active_email.html', {
             'user': customer,
-            'domain': current_site.domain,
+            'domain': custom_activation_url,
             'uid': urlsafe_base64_encode(force_bytes(customer.pk)),
             'token': account_activation_token.make_token(customer),
         })
@@ -149,16 +138,30 @@ def register(request):
         email.send()
 
         # Provide a success response with a redirect URL and message
-        redirect_url = reverse('login')  # Adjust this based on your URL configuration
+        # redirect_url = reverse('login')  # Adjust this based on your URL configuration
+        redirect_url = reverse('activate', args=[urlsafe_base64_encode(force_bytes(customer.pk)),account_activation_token.make_token(customer)])
         success_message = 'Check your email to activate your account.'
         return Response({
-            'redirect_url': redirect_url,
+             'redirect_url': redirect_url,
             'success_message': success_message,
         }, status=status.HTTP_201_CREATED)
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+def activate_account(request, uidb64, token):
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and account_activation_token.check_token(user, token):
+        user.is_active = True
+        user.save()
+        return JsonResponse({'message': 'Activation successful'})
+    else:
+        return JsonResponse({'error': 'Invalid activation link'}, status=400)
 
 
 def get_csrf_token(request):

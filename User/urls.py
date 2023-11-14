@@ -1,7 +1,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet, RentViewSet, AddInfoViewSet,
-   PayInfoViewSet, MyObtainToken, check_email, register, activate_account, add_clinic, get_user_clinic, get_all_clinics, delete_clinic, delete_user, get_csrf_token)
+   PayInfoViewSet, MyObtainToken, check_email, register, activate_account,
+                  add_clinic, get_user_clinic, get_all_clinics, delete_clinic, delete_user, get_csrf_token,userdata,update_customer)
 
 
 router = DefaultRouter()
@@ -25,4 +26,7 @@ urlpatterns = [
     path('activate/<uidb64>/<token>/', activate_account, name='activate_account'),
     path('register/', register, name='register'),
     path('get_csrf_token/', get_csrf_token, name='get_csrf_token'),
+path('userdata/', userdata, name='userdata'),
+path('update_customer/', update_customer, name='update_customer'),
+
 ]

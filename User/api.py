@@ -247,3 +247,51 @@ def delete_user(request):
         return Response({"msg": "Can not find user or customer."}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"msg": "User Found."}, status=status.HTTP_204_NO_CONTENT)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def userdata(request):
+    customer_id = request.auth.payload.get('user_id')
+    try:
+        customer = Customer.objects.get(pk=customer_id)
+    except Customer.DoesNotExist:
+        return Response({"msg": "Can not find user or customer."}, status=status.HTTP_400_BAD_REQUEST)
+    serialized_customer = CustomerSerializer(customer).data
+    return Response(serialized_customer, status=status.HTTP_200_OK)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_customer(request):
+    customer_id = request.auth.payload.get('user_id')
+    customer = Customer.objects.get(pk=customer_id)
+    user = User.objects.get(pk=customer_id)
+    password = request.data.get('vertifypassword')
+
+    if user.check_password(password):
+        try:
+            phone = request.data.get('phone')
+            image = request.data.get('image')
+            username = request.data.get('username')
+            new_password = request.data.get('password')
+
+            if phone:
+                customer.phone = phone
+            if image:
+                customer.image = image
+            if username:
+                user.username = username
+                user.email = username
+                customer.name = username
+            if new_password:
+                user.set_password(new_password)
+
+            customer.save()
+            user.save()
+
+            return Response({"msg": "Data has been modified"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"msg": "Error updating data", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({"msg": "Wrong data"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+

@@ -53,14 +53,15 @@ class CustomerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Customer
-        fields = ['name', 'email', 'phone', 'password']
+        fields = ['name', 'email', 'phone', 'password','image']
 
     def create(self, validated_data):
         # Extract customer data
         customer_data = {
             'name': validated_data['name'],
             'email': validated_data['email'],
-            'phone': validated_data['phone']
+            'phone': validated_data['phone'],
+            'image': validated_data['image'],
         }
 
         # Extract user data

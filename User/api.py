@@ -6,14 +6,18 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import permission_classes, api_view
 from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent
-from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSeriallizer,
+from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer,
                           OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer)
 from Products.api import CustomPagination
 from django.contrib.auth.models import User
 from .token import account_activation_token
 from django.http import JsonResponse
-from django.utils.http import urlsafe_base64_decode
-from .seriallizer import CustomerSerializer
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.core.mail import EmailMessage
+from django.contrib.sites.shortcuts import get_current_site
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils.encoding import force_bytes, force_str
 from rest_framework.permissions import AllowAny
 from django.middleware.csrf import get_token
 from rest_framework.exceptions import ValidationError
@@ -37,7 +41,7 @@ class ClinicViewSet(viewsets.ModelViewSet):
 
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
-    serializer_class = CustomerSeriallizer
+    serializer_class = CustomerSerializer
     lookup_field = 'pk'
     pagination_class = CustomPagination
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
@@ -111,15 +115,50 @@ def activate_account(request, uidb64, token):
         return JsonResponse({'error': 'Invalid activation link'}, status=400)
 
 
+# @api_view(['POST'])
+# @permission_classes([AllowAny])
+# def register(request):
+#     serializer = CustomerSerializer(data=request.data)
+#
+#     if serializer.is_valid():
+#         serializer.save()
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
     serializer = CustomerSerializer(data=request.data)
 
     if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        customer = serializer.save()
+
+        # Send activation email
+        current_site = get_current_site(request)
+        mail_subject = 'Activation link has been sent to your email id'
+        message = render_to_string('acc_active_email.html', {
+            'user': customer,
+            'domain': current_site.domain,
+            'uid': urlsafe_base64_encode(force_bytes(customer.pk)),
+            'token': account_activation_token.make_token(customer),
+        })
+        to_email = serializer.validated_data.get('email')
+        email = EmailMessage(
+            mail_subject, message, to=[to_email]
+        )
+        email.send()
+
+        # Provide a success response with a redirect URL and message
+        redirect_url = reverse('login')  # Adjust this based on your URL configuration
+        success_message = 'Check your email to activate your account.'
+        return Response({
+            'redirect_url': redirect_url,
+            'success_message': success_message,
+        }, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 def get_csrf_token(request):

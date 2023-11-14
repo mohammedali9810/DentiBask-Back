@@ -4,37 +4,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Customer,Pay_inf,Add_info,Order,OrderItem,Clinic,Rent
-class CustomerSeriallizer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
 
-    class Meta:
-        model = Customer
-        fields = ['name', 'email', 'phone', 'password','image']
 
-    def create(self, validated_data):
-        # Extract customer data
-        customer_data = {
-            'name': validated_data['name'],
-            'email': validated_data['email'],
-            'phone': validated_data['phone'],
-            'image': validated_data['image']
-        }
-
-        # Extract user data
-        user_data = {
-            'username': validated_data['email'],
-            'email': validated_data['email'],
-            'password': validated_data['password'],
-        }
-
-        # Create User and Customer
-        user = User.objects.create_user(**user_data)
-        customer = Customer.objects.create(user=user, **customer_data)
-
-        return customer
-
-    @action(detail=False, methods=['DELETE'])
-    def delete_by_email(self, request):
+@action(detail=False, methods=['DELETE'])
+def delete_by_email(self, request):
         email = request.data.get('email')
         if email:
             try:

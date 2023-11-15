@@ -5,9 +5,13 @@ User/migrations
 api/migrations
 Products/migrations
 __pycache__
+<<<<<<< HEAD
 migrations
 DentiBask/__pycache__
 api/__pycache__
 DentiBask/__pycache__
 Products/__pycache__
 User/__pycache__
+=======
+migrations
+>>>>>>> 2cc308279f67c60b68e90d451a31b6e8fc33ee90

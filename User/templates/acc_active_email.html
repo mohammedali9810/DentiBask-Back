@@ -1,5 +1,34 @@
 {% autoescape off %}
-Hi {{ user.username }},
-Please click on the link to confirm your registration,
-http://{{ domain }}{% url 'activate' uidb64=uid token=token %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+    }
+
+    .container {
+      margin: 20px;
+    }
+
+    img {
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
+  <title>Email Template</title>
+</head>
+<body>
+  <div class="container">
+    <p>Hi {{ user.username }},</p>
+    <p>Please click on the link to confirm your registration:</p>
+    <a href="http://{{ domain }}{% url 'activate' uidb64=uid token=token %}">Confirmation Link</a>
+    <img src="https://i.pinimg.com/originals/9c/87/99/9c879909741ebaa6b7a614071079e542.jpg" alt="Centered Image" width="200">
+  </div>
+</body>
+</html>
 {% endautoescape %}

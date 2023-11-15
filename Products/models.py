@@ -11,11 +11,10 @@ def unique_image_name(instance, filename):
     else:
         return instance.image.name
 
-# Create your models here.
 ############---------Category MODEL---------############
 class Category(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200,unique=True)
     desc = models.TextField()
     image = models.ImageField(null=False, blank=False,upload_to=unique_image_name)
 
@@ -44,8 +43,6 @@ class Product(models.Model):
     def get_img(self):
         return f"/media/{self.image}"
 
-    def __str__(self):
-        return self.name
 
     def save(self, *args, **kwargs):
         self.price = round(float(self.price), 2)

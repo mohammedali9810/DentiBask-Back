@@ -1,7 +1,10 @@
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+
 from .models import Product,Category
 from .seriallizer import ProductSeriallizer, CategorySeriallizer
-from rest_framework import viewsets, pagination, permissions
+from rest_framework import viewsets, pagination, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes, api_view
 from django.middleware.csrf import get_token
@@ -78,4 +81,24 @@ def get_all_products(request):
     # Return the paginated response
     return paginator.get_paginated_response(serialized_products)
 
-
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def update_product(request):
+    product_id = request.data.get('id')
+    product = Product.objects.get(pk=product_id)
+    product.name = request.data.get('title', product.name)
+    product.price = request.data.get('price', product.price)
+    product.desc = request.data.get('description', product.desc)
+    categorry_id = request.data.get('categorry_id', product.Categ_id.id)
+    category = get_object_or_404(Category, pk=categorry_id)
+    product.Categ_id = category
+    if 'image' in request.data and request.data['image'] and request.data['image'] != "":
+        product.image = request.data['image']
+    else:
+        request.data['image'] = product.image
+    try:
+        product.full_clean()
+        product.save()
+        return Response({"msg": "Data has been modified"}, status=status.HTTP_200_OK)
+    except ValidationError as e:
+        return Response({"msg": "Wrong data", "error": e.message_dict}, status=status.HTTP_400_BAD_REQUEST)

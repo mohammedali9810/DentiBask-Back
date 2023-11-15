@@ -3,12 +3,14 @@ import os
 from django.utils import timezone
 # views.py
 
-
-
 def unique_image_name(instance, filename):
-    base, extension = os.path.splitext(filename)
-    timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
-    return f'images/category/{base}_{timestamp}{extension}'
+    if instance.image and filename:
+        base, extension = os.path.splitext(filename)
+        timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+        return f'images/category/{base}_{timestamp}{extension}'
+    else:
+        return instance.image.name
+
 # Create your models here.
 ############---------Category MODEL---------############
 class Category(models.Model):
@@ -20,9 +22,13 @@ class Category(models.Model):
     #Admin_id
 
 def unique_image_product(instance, filename):
-    base, extension = os.path.splitext(filename)
-    timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
-    return f'images/product/{base}_{timestamp}{extension}'
+    if instance.image and filename:
+        base, extension = os.path.splitext(filename)
+        timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+        return f'images/product/{base}_{timestamp}{extension}'
+    else:
+        return instance.image.name
+
 ############---------PRODUCT MODEL---------############
 class Product(models.Model):
     id = models.AutoField(primary_key=True)

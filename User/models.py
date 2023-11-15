@@ -37,7 +37,7 @@ class Customer(models.Model):
 
 ############ ---------Payment-Info MODEL---------############
 class Pay_inf(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
     card_name = models.CharField(max_length=200)
     exp_date = models.DateField()
     card_num = models.IntegerField()
@@ -69,7 +69,7 @@ class Add_info(models.Model):
 
 class Order(models.Model):
     id = models.AutoField(primary_key=True)
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(Customer, on_delete=models.CASCADE)
     STATUS_CHOICES = [
         ('Cancelled', 'Cancelled'),
         ('Processing', 'Processing'),
@@ -122,7 +122,7 @@ class Rent(models.Model):
     end_date = models.DateField()
     duration_months = models.IntegerField()
     price = models.DecimalField(decimal_places=2, max_digits=2)
-    renter = models.ForeignKey(User, on_delete=models.CASCADE)
+    renter = models.ForeignKey(Customer, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -139,4 +139,4 @@ class Transaction(models.Model):
     id = models.AutoField(primary_key=True)
     amount = models.IntegerField()
     created_at = models.DateField(auto_now_add=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)

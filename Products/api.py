@@ -119,3 +119,35 @@ def get_category_products(request):
         return Response({"msg":"Can not find products"}, status=status.HTTP_400_BAD_REQUEST)
     seriallized_products = ProductSeriallizer(products,many=True).data
     return Response(seriallized_products,status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def add_product(request):
+    try:
+        serialized_product = ProductSeriallizer(data=request.data)
+        if serialized_product.is_valid():
+            serialized_product.save()
+            return Response({"msg": "Product added successfully"}, status=status.HTTP_201_CREATED)
+
+    except ValidationError as e:
+        print("Validation Error:", e.message_dict)
+        return Response({"msg": "Wrong data", "error": e.message_dict}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        import traceback
+        print("Exception during save:", str(e))
+        traceback.print_exc()
+        return Response({"msg": "Internal Server Error", "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def delete_category(request):
+    category_id = request.data.get('category_id')
+    try:
+        category = Category.objects.get(pk=category_id)
+    except Category.DoesNotExist:
+        return Response({"msg": " Category not found"}, status=status.HTTP_400_BAD_REQUEST)
+    category.delete()
+    return Response({"msg": " Category deleted"}, status=status.HTTP_204_NO_CONTENT)

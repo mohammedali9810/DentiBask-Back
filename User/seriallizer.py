@@ -47,6 +47,10 @@ class RentSeriallizer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class TransactionSeriallizer(serializers.ModelSerializer):
+   class Meta:
+       model = Order
+       fields = '__all__'
 
 class CustomerSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

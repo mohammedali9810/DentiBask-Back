@@ -28,7 +28,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSeriallizer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
 class ClinicViewSet(viewsets.ModelViewSet):
@@ -325,3 +325,45 @@ def get_user_transaction(request):
    serializer = TransactionSeriallizer(transactions, many=True)
    serialized_transactions = serializer.data
    return Response({"transactions": serialized_transactions}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_all_orders(request):
+    paginator = CustomPagination()
+    orders = Order.objects.all()
+    paginated_orders = paginator.paginate_queryset(orders, request)
+
+    serializer = OrderSeriallizer(paginated_orders, many=True)
+    serialized_orders = serializer.data
+
+    return Response({"orders": serialized_orders}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_all_rents(request):
+    paginator = CustomPagination()
+    rents = Rent.objects.all()
+    paginated_rents = paginator.paginate_queryset(rents, request)
+
+    serializer = RentSeriallizer(paginated_rents, many=True)
+    serialized_rents = serializer.data
+
+    return Response({"rents": serialized_rents}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_all_transactions(request):
+    paginator = CustomPagination()
+    transactions = Transaction.objects.all()
+    paginated_transactions = paginator.paginate_queryset(transactions, request)
+
+    serializer = TransactionSeriallizer(paginated_transactions, many=True)
+    serialized_transactions = serializer.data
+
+    return Response({"transactions": serialized_transactions}, status=status.HTTP_200_OK)
+
+
+def get_items_in_order(order_id):
+    items = OrderItem.objects.filter(order_id=order_id)
+    return items
+

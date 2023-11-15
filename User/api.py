@@ -5,9 +5,9 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import permission_classes, api_view
-from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent
+from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent ,Transaction
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer,
-                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer)
+                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer,TransactionSeriallizer)
 from Products.api import CustomPagination
 from django.contrib.auth.models import User
 from .token import account_activation_token
@@ -298,3 +298,30 @@ def update_customer(request):
 
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_order(request):
+   customer_id = request.auth.payload.get("user_id")
+   orders = Order.objects.filter(user=customer_id)
+   serializer = OrderSeriallizer(orders, many=True)
+   serialized_orders = serializer.data
+   return Response({"orders": serialized_orders}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_rent(request):
+   customer_id = request.auth.payload.get("user_id")
+   rents = Rent.objects.filter(renter=customer_id)
+   serializer = RentSeriallizer(rents, many=True)
+   serialized_rents = serializer.data
+   return Response({"rents": serialized_rents}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_transaction(request):
+   customer_id = request.auth.payload.get("user_id")
+   transactions = Transaction.objects.filter(user=customer_id)
+   serializer = TransactionSeriallizer(transactions, many=True)
+   serialized_transactions = serializer.data
+   return Response({"transactions": serialized_transactions}, status=status.HTTP_200_OK)

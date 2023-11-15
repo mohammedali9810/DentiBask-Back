@@ -28,5 +28,4 @@ urlpatterns = [
     path('get_csrf_token/', get_csrf_token, name='get_csrf_token'),
 path('userdata/', userdata, name='userdata'),
 path('update_customer/', update_customer, name='update_customer'),
-
 ]

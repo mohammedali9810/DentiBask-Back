@@ -21,7 +21,8 @@ from django.utils.encoding import force_bytes, force_str
 from rest_framework.permissions import AllowAny
 from django.middleware.csrf import get_token
 from rest_framework.exceptions import ValidationError
-
+from retry import retry
+from requests.exceptions import Timeout
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -116,37 +117,49 @@ def check_email(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    serializer = CustomerSerializer(data=request.data)
+    try:
+        serializer = CustomerSerializer(data=request.data)
 
-    if serializer.is_valid():
-        customer = serializer.save()
+        if serializer.is_valid():
+            customer = serializer.save()
 
-        # Send activation email
-        # current_site = get_current_site(request)
-        custom_activation_url = "localhost:3000/activate"
-        mail_subject = 'Activation link has been sent to your email id'
-        message = render_to_string('acc_active_email.html', {
-            'user': customer,
-            'domain': custom_activation_url,
-            'uid': urlsafe_base64_encode(force_bytes(customer.pk)),
-            'token': account_activation_token.make_token(customer),
-        })
-        to_email = serializer.validated_data.get('email')
-        email = EmailMessage(
-            mail_subject, message, to=[to_email]
-        )
-        email.send()
+            # Send activation email with retries
+            custom_activation_url = "localhost:3000/activate"
+            mail_subject = 'Please Activate Your Account!'
+            message = render_to_string('acc_active_email.html', {
+                'user': customer,
+                'domain': custom_activation_url,
+                'uid': urlsafe_base64_encode(force_bytes(customer.pk)),
+                'token': account_activation_token.make_token(customer),
+            })
+            to_email = serializer.validated_data.get('email')
 
-        # Provide a success response with a redirect URL and message
-        # redirect_url = reverse('login')  # Adjust this based on your URL configuration
-        redirect_url = reverse('activate', args=[urlsafe_base64_encode(force_bytes(customer.pk)),account_activation_token.make_token(customer)])
-        success_message = 'Check your email to activate your account.'
-        return Response({
-             'redirect_url': redirect_url,
-            'success_message': success_message,
-        }, status=status.HTTP_201_CREATED)
-    else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Retry sending email in case of Timeout
+            @retry(Timeout, delay=1, max_delay=5, backoff=2, jitter=(1, 2), tries=3)
+            def send_email():
+                email = EmailMessage(
+                    mail_subject, message, to=[to_email]
+                )
+                email.send()
+
+            send_email()
+
+            # Provide a success response with a redirect URL and message
+            redirect_url = reverse('activate', args=[urlsafe_base64_encode(force_bytes(customer.pk)),
+                                                     account_activation_token.make_token(customer)])
+            success_message = 'Check your email to activate your account.'
+            return Response({
+                'redirect_url': redirect_url,
+                'success_message': success_message,
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    except ValidationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'error': 'An error occurred while processing your request.'}, status=500)
 
 
 def activate_account(request, uidb64, token):

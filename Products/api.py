@@ -89,6 +89,8 @@ def update_product(request):
     product.name = request.data.get('title', product.name)
     product.price = request.data.get('price', product.price)
     product.desc = request.data.get('description', product.desc)
+    product.stock = request.data.get('stock',product.stock)
+    product.unit = request.data.get('unit',product.unit)
     categorry_id = request.data.get('categorry_id', product.Categ_id.id)
     category = get_object_or_404(Category, pk=categorry_id)
     product.Categ_id = category
@@ -102,3 +104,18 @@ def update_product(request):
         return Response({"msg": "Data has been modified"}, status=status.HTTP_200_OK)
     except ValidationError as e:
         return Response({"msg": "Wrong data", "error": e.message_dict}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def get_categories(request):
+    categories = Category.objects.all()
+    seriallized_categories = CategorySeriallizer(categories,many=True).data
+    return Response(seriallized_categories,status=status.HTTP_200_OK)
+@api_view(['GET'])
+def get_category_products(request):
+    category_id = request.GET.get('category_id')
+    try:
+        products = Product.objects.filter(Categ_id=category_id)
+    except Product.DoesNotExist:
+        return Response({"msg":"Can not find products"}, status=status.HTTP_400_BAD_REQUEST)
+    seriallized_products = ProductSeriallizer(products,many=True).data
+    return Response(seriallized_products,status=status.HTTP_200_OK)

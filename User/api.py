@@ -5,9 +5,9 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import permission_classes, api_view
-from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent
+from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent ,Transaction
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer,
-                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer)
+                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer,TransactionSeriallizer)
 from Products.api import CustomPagination
 from django.contrib.auth.models import User
 from .token import account_activation_token

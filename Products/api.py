@@ -61,6 +61,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         if name:
             return Product.objects.filter(name__icontains=name)
         return Product.objects.all()
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySeriallizer
@@ -110,12 +111,40 @@ def get_categories(request):
     categories = Category.objects.all()
     seriallized_categories = CategorySeriallizer(categories,many=True).data
     return Response(seriallized_categories,status=status.HTTP_200_OK)
+
+
 @api_view(['GET'])
-def get_category_products(request):
-    category_id = request.GET.get('category_id')
-    try:
-        products = Product.objects.filter(Categ_id=category_id)
-    except Product.DoesNotExist:
-        return Response({"msg":"Can not find products"}, status=status.HTTP_400_BAD_REQUEST)
-    seriallized_products = ProductSeriallizer(products,many=True).data
-    return Response(seriallized_products,status=status.HTTP_200_OK)
+def products_catgory(request):
+    category_name = request.query_params.get('name', None)
+
+    if category_name:
+            category = get_object_or_404(Category, name=category_name)
+            queryset = Product.objects.filter(Categ_id=category.id)
+    else:
+            queryset = Product.objects.all()
+
+    serializer = ProductSeriallizer(queryset, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def product_detail(request):
+    pk = request.query_params.get('id')
+    
+    if pk is None:
+        return Response({'error': 'Product ID (pk) is required in the query parameters.'}, status=status.HTTP_400_BAD_REQUEST)
+    product = get_object_or_404(Product, id=pk)
+    serializer = ProductSeriallizer(product)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def product_search(request):
+    name = request.query_params.get('name', None)
+    
+    if name:
+        queryset = Product.objects.filter(name__icontains=name)
+    else:
+        queryset = Product.objects.all()
+
+    serializer = ProductSeriallizer(queryset, many=True)
+    return Response(serializer.data)
+

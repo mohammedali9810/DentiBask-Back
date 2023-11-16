@@ -6,18 +6,10 @@ from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet
 ,get_all_orders,get_user_order,get_user_rent,get_all_rents,get_user_transaction,get_all_transactions,get_items_in_order)
 
 
-router = DefaultRouter()
-router.register('order', OrderViewSet)
-router.register('orderitem', OrderItemViewSet)
-router.register('clinic', ClinicViewSet)
-router.register('customer', CustomerViewSet)
-router.register('rent', RentViewSet)
-router.register('addinfo', AddInfoViewSet)
-router.register('payinfo', PayInfoViewSet)
+
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('login/', MyObtainToken.as_view(), name='token_obtain_pair'),
     path('checkemail/', check_email, name='check_email'),
     path('addclinic/', add_clinic, name='add_clinic'),
     path('userclinic/', get_user_clinic, name='get_user_clinic'),
@@ -25,7 +17,6 @@ urlpatterns = [
     path('delete_clinic/', delete_clinic, name='delete_clinic'),
     path('delete_user/', delete_user, name='delete_user'),
     path('activate/<uidb64>/<token>/', activate_account, name='activate'),
-    path('register/', register, name='register'),
     path('get_csrf_token/', get_csrf_token, name='get_csrf_token'),
     path('userorder/', get_user_order, name='get_user_order'),
     path('get_all_orders/', get_all_orders, name='get_all_orders'),

@@ -4,10 +4,5 @@ env
 User/migrations
 api/migrations
 Products/migrations
-__pycache__
 migrations
-DentiBask/__pycache__
-api/__pycache__
-DentiBask/__pycache__
-Products/__pycache__
-User/__pycache__
+

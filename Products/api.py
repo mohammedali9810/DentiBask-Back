@@ -61,6 +61,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         if name:
             return Product.objects.filter(name__icontains=name)
         return Product.objects.all()
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySeriallizer
@@ -110,6 +111,8 @@ def get_categories(request):
     categories = Category.objects.all()
     seriallized_categories = CategorySeriallizer(categories,many=True).data
     return Response(seriallized_categories,status=status.HTTP_200_OK)
+
+
 @api_view(['GET'])
 def get_category_products(request):
     category_id = request.GET.get('category_id')
@@ -141,13 +144,84 @@ def add_product(request):
         return Response({"msg": "Internal Server Error", "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated, IsAdminUser])
 def delete_category(request):
-    category_id = request.data.get('category_id')
+    category_id = request.GET.get('category_id')
     try:
         category = Category.objects.get(pk=category_id)
     except Category.DoesNotExist:
         return Response({"msg": " Category not found"}, status=status.HTTP_400_BAD_REQUEST)
     category.delete()
     return Response({"msg": " Category deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def update_category(request):
+    category_id = request.data.get('category_id')
+    category = Category.objects.get(pk=category_id)
+    category.name = request.data.get('name', category.name)
+    category.desc = request.data.get('desc', category.desc)
+
+    try:
+        if 'image' in request.data and request.data['image']:
+            # Access the name attribute of the InMemoryUploadedFile object
+            image_name = request.data['image']
+
+            # Check if the image name starts with the specified URL
+            if image_name.startswith('https://dentibaskbucket.s3.amazonaws.com/images/category/'):
+                # If the image name starts with the specified URL, do not update it
+                return Response({"msg": "Data has been modified and no image added"}, status=status.HTTP_200_OK)
+            else:
+                # If the image name doesn't start with the specified URL, update the category's image
+                category.image = request.data['image']
+    except KeyError:
+        # Handle the case where 'image' key is not present in the request data
+        return Response({"msg": "Invalid request data"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        category.full_clean()
+        category.save()
+        return Response({"msg": "Data has been modified"}, status=status.HTTP_200_OK)
+    except ValidationError as e:
+        return Response({"msg": "Wrong data", "error": e.message_dict}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def products_catgory(request):
+    category_name = request.query_params.get('name', None)
+
+    if category_name:
+        category = get_object_or_404(Category, name=category_name)
+        queryset = Product.objects.filter(Categ_id=category.id)
+    else:
+        queryset = Product.objects.all()
+
+    serializer = ProductSeriallizer(queryset, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def product_detail(request):
+    pk = request.query_params.get('id')
+
+    if pk is None:
+        return Response({'error': 'Product ID (pk) is required in the query parameters.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+    product = get_object_or_404(Product, id=pk)
+    serializer = ProductSeriallizer(product)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def product_search(request):
+    name = request.query_params.get('name', None)
+
+    if name:
+        queryset = Product.objects.filter(name__icontains=name)
+    else:
+        queryset = Product.objects.all()
+
+    serializer = ProductSeriallizer(queryset, many=True)
+    return Response(serializer.data)

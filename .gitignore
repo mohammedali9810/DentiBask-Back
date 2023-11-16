@@ -4,5 +4,5 @@ env
 User/migrations
 api/migrations
 Products/migrations
-__pycache__
+_pycache_
 migrations

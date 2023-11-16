@@ -140,4 +140,4 @@ class Transaction(models.Model):
     id = models.AutoField(primary_key=True)
     amount = models.IntegerField()
     created_at = models.DateField(auto_now_add=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)

@@ -5,9 +5,9 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import permission_classes, api_view
-from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent
+from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent, Transaction
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer,
-                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer)
+                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer)
 from Products.api import CustomPagination
 from django.contrib.auth.models import User
 from .token import account_activation_token
@@ -21,6 +21,8 @@ from django.utils.encoding import force_bytes, force_str
 from rest_framework.permissions import AllowAny
 from django.middleware.csrf import get_token
 from rest_framework.exceptions import ValidationError
+from retry import retry
+from requests.exceptions import Timeout
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -28,7 +30,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSeriallizer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
 class ClinicViewSet(viewsets.ModelViewSet):
@@ -101,8 +103,6 @@ def check_email(request):
     return Response({"msg": "email Not found."}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
 # @api_view(['POST'])
 # @permission_classes([AllowAny])
 # def register(request):
@@ -116,37 +116,49 @@ def check_email(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    serializer = CustomerSerializer(data=request.data)
+    try:
+        serializer = CustomerSerializer(data=request.data)
 
-    if serializer.is_valid():
-        customer = serializer.save()
+        if serializer.is_valid():
+            customer = serializer.save()
 
-        # Send activation email
-        # current_site = get_current_site(request)
-        custom_activation_url = "localhost:3000/activate"
-        mail_subject = 'Activation link has been sent to your email id'
-        message = render_to_string('acc_active_email.html', {
-            'user': customer,
-            'domain': custom_activation_url,
-            'uid': urlsafe_base64_encode(force_bytes(customer.pk)),
-            'token': account_activation_token.make_token(customer),
-        })
-        to_email = serializer.validated_data.get('email')
-        email = EmailMessage(
-            mail_subject, message, to=[to_email]
-        )
-        email.send()
+            # Send activation email with retries
+            custom_activation_url = "localhost:3000/activate"
+            mail_subject = 'Please Activate Your Account!'
+            message = render_to_string('acc_active_email.html', {
+                'user': customer,
+                'domain': custom_activation_url,
+                'uid': urlsafe_base64_encode(force_bytes(customer.pk)),
+                'token': account_activation_token.make_token(customer),
+            })
+            to_email = serializer.validated_data.get('email')
 
-        # Provide a success response with a redirect URL and message
-        # redirect_url = reverse('login')  # Adjust this based on your URL configuration
-        redirect_url = reverse('activate', args=[urlsafe_base64_encode(force_bytes(customer.pk)),account_activation_token.make_token(customer)])
-        success_message = 'Check your email to activate your account.'
-        return Response({
-             'redirect_url': redirect_url,
-            'success_message': success_message,
-        }, status=status.HTTP_201_CREATED)
-    else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Retry sending email in case of Timeout
+            @retry(Timeout, delay=1, max_delay=5, backoff=2, jitter=(1, 2), tries=3)
+            def send_email():
+                email = EmailMessage(
+                    mail_subject, message, to=[to_email]
+                )
+                email.send()
+
+            send_email()
+
+            # Provide a success response with a redirect URL and message
+            redirect_url = reverse('activate', args=[urlsafe_base64_encode(force_bytes(customer.pk)),
+                                                     account_activation_token.make_token(customer)])
+            success_message = 'Check your email to activate your account.'
+            return Response({
+                'redirect_url': redirect_url,
+                'success_message': success_message,
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    except ValidationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'error': 'An error occurred while processing your request.'}, status=500)
 
 
 def activate_account(request, uidb64, token):
@@ -167,7 +179,8 @@ def activate_account(request, uidb64, token):
 def get_csrf_token(request):
     token = get_token(request)
     return JsonResponse({'csrfToken': token})
-  
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_clinic(request):
@@ -250,6 +263,7 @@ def delete_user(request):
         return Response({"msg": "Can not find user or customer."}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"msg": "User Found."}, status=status.HTTP_204_NO_CONTENT)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def userdata(request):
@@ -260,6 +274,7 @@ def userdata(request):
         return Response({"msg": "Can not find user or customer."}, status=status.HTTP_400_BAD_REQUEST)
     serialized_customer = CustomerSerializer(customer).data
     return Response(serialized_customer, status=status.HTTP_200_OK)
+
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -297,31 +312,72 @@ def update_customer(request):
         return Response({"msg": "Wrong data"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_order(request):
-   customer_id = request.auth.payload.get("user_id")
-   orders = Order.objects.filter(user=customer_id)
-   serializer = OrderSeriallizer(orders, many=True)
-   serialized_orders = serializer.data
-   return Response({"orders": serialized_orders}, status=status.HTTP_200_OK)
+    customer_id = request.auth.payload.get("user_id")
+    orders = Order.objects.filter(user=customer_id)
+    serializer = OrderSeriallizer(orders, many=True)
+    serialized_orders = serializer.data
+    return Response({"orders": serialized_orders}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_rent(request):
-   customer_id = request.auth.payload.get("user_id")
-   rents = Rent.objects.filter(renter=customer_id)
-   serializer = RentSeriallizer(rents, many=True)
-   serialized_rents = serializer.data
-   return Response({"rents": serialized_rents}, status=status.HTTP_200_OK)
+    customer_id = request.auth.payload.get("user_id")
+    rents = Rent.objects.filter(renter=customer_id)
+    serializer = RentSeriallizer(rents, many=True)
+    serialized_rents = serializer.data
+    return Response({"rents": serialized_rents}, status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_transaction(request):
-   customer_id = request.auth.payload.get("user_id")
-   transactions = Transaction.objects.filter(user=customer_id)
-   serializer = TransactionSeriallizer(transactions, many=True)
-   serialized_transactions = serializer.data
-   return Response({"transactions": serialized_transactions}, status=status.HTTP_200_OK)
+    customer_id = request.auth.payload.get("user_id")
+    transactions = Transaction.objects.filter(user=customer_id)
+    serializer = TransactionSeriallizer(transactions, many=True)
+    serialized_transactions = serializer.data
+    return Response({"transactions": serialized_transactions}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_all_orders(request):
+    paginator = CustomPagination()
+    orders = Order.objects.all()
+    paginated_orders = paginator.paginate_queryset(orders, request)
+
+    serializer = OrderSeriallizer(paginated_orders, many=True)
+    serialized_orders = serializer.data
+
+    return Response({"orders": serialized_orders}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_all_rents(request):
+    paginator = CustomPagination()
+    rents = Rent.objects.all()
+    paginated_rents = paginator.paginate_queryset(rents, request)
+
+    serializer = RentSeriallizer(paginated_rents, many=True)
+    serialized_rents = serializer.data
+
+    return Response({"rents": serialized_rents}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_all_transactions(request):
+    paginator = CustomPagination()
+    transactions = Transaction.objects.all()
+    paginated_transactions = paginator.paginate_queryset(transactions, request)
+
+    serializer = TransactionSeriallizer(paginated_transactions, many=True)
+    serialized_transactions = serializer.data
+
+    return Response({"transactions": serialized_transactions}, status=status.HTTP_200_OK)
+
+
+def get_items_in_order(order_id):
+    items = OrderItem.objects.filter(order_id=order_id)
+    return items

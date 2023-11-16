@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
+from django.utils.translation import gettext_lazy as _
 from .models import Customer,Pay_inf,Add_info,Order,OrderItem,Clinic,Rent
 
 
@@ -46,6 +46,26 @@ class RentSeriallizer(serializers.ModelSerializer):
         model = Rent
         fields = '__all__'
 
+    def validate(self, data):
+        # Ensure that the start date is before the end date
+        if data.get('start_date') and data.get('end_date') and data['start_date'] >= data['end_date']:
+            raise serializers.ValidationError({'end_date': _('End date must be after the start date.')})
+
+        # Calculate duration in months based on start_date and end_date
+        if data.get('start_date') and data.get('end_date'):
+            months = ((data['end_date'].year - data['start_date'].year) * 12
+                    + (data['end_date'].month - data['start_date'].month))
+            if months > 0:
+                data['duration_months'] = months
+            else:
+                raise serializers.ValidationError({'duration': _(' Renting Duration is at least 1 month.')})
+
+        # Ensure that the price is not a negative value
+        if data.get('price', 0) < 0:
+            raise serializers.ValidationError({'price': _('Price must not be a negative value.')})
+
+        return data
+
 
 class TransactionSeriallizer(serializers.ModelSerializer):
    class Meta:
@@ -65,7 +85,6 @@ class CustomerSerializer(serializers.ModelSerializer):
             'name': validated_data['name'],
             'email': validated_data['email'],
             'phone': validated_data['phone'],
-            # 'image': validated_data['image'],
         }
 
         # Extract user data

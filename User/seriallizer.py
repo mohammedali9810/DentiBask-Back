@@ -3,6 +3,8 @@ from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils.translation import gettext_lazy as _
+
+from Products.models import Product
 from .models import Customer,Pay_inf,Add_info,Order,OrderItem,Clinic,Rent
 
 
@@ -37,6 +39,19 @@ class OrderItemSeriallizer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = '__all__'
+    def create(self, validated_data):
+        product_price = validated_data.get('product_id').price
+        orderitem_data = {
+            'order_id': validated_data['order_id'],
+            'product_id': validated_data['product_id'],
+            'quantity': validated_data['quantity'],
+            'price': product_price,
+        }
+        orderitem = OrderItem.objects.create(**orderitem_data)
+        return orderitem
+
+
+
 class ClinicSeriallizer(serializers.ModelSerializer):
     class Meta:
         model = Clinic

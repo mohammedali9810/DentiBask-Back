@@ -87,7 +87,7 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order_id = models.ForeignKey(Order, on_delete=models.CASCADE)
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
-    price = models.DecimalField(decimal_places=2, max_digits=2)
+    price = models.DecimalField(decimal_places=2, max_digits=8,editable=False)
     quantity = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 

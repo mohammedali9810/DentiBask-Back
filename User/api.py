@@ -5,9 +5,9 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import permission_classes, api_view
-from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent ,Transaction
+from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent, Transaction
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer,
-                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer,TransactionSeriallizer)
+                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer)
 from Products.api import CustomPagination
 from django.contrib.auth.models import User
 from .token import account_activation_token
@@ -23,6 +23,7 @@ from django.middleware.csrf import get_token
 from rest_framework.exceptions import ValidationError
 from retry import retry
 from requests.exceptions import Timeout
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -102,8 +103,6 @@ def check_email(request):
     return Response({"msg": "email Not found."}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
 # @api_view(['POST'])
 # @permission_classes([AllowAny])
 # def register(request):
@@ -180,7 +179,8 @@ def activate_account(request, uidb64, token):
 def get_csrf_token(request):
     token = get_token(request)
     return JsonResponse({'csrfToken': token})
-  
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_clinic(request):
@@ -263,6 +263,7 @@ def delete_user(request):
         return Response({"msg": "Can not find user or customer."}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"msg": "User Found."}, status=status.HTTP_204_NO_CONTENT)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def userdata(request):
@@ -273,6 +274,7 @@ def userdata(request):
         return Response({"msg": "Can not find user or customer."}, status=status.HTTP_400_BAD_REQUEST)
     serialized_customer = CustomerSerializer(customer).data
     return Response(serialized_customer, status=status.HTTP_200_OK)
+
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -310,34 +312,34 @@ def update_customer(request):
         return Response({"msg": "Wrong data"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_order(request):
-   customer_id = request.auth.payload.get("user_id")
-   orders = Order.objects.filter(user=customer_id)
-   serializer = OrderSeriallizer(orders, many=True)
-   serialized_orders = serializer.data
-   return Response({"orders": serialized_orders}, status=status.HTTP_200_OK)
+    customer_id = request.auth.payload.get("user_id")
+    orders = Order.objects.filter(user=customer_id)
+    serializer = OrderSeriallizer(orders, many=True)
+    serialized_orders = serializer.data
+    return Response({"orders": serialized_orders}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_rent(request):
-   customer_id = request.auth.payload.get("user_id")
-   rents = Rent.objects.filter(renter=customer_id)
-   serializer = RentSeriallizer(rents, many=True)
-   serialized_rents = serializer.data
-   return Response({"rents": serialized_rents}, status=status.HTTP_200_OK)
+    customer_id = request.auth.payload.get("user_id")
+    rents = Rent.objects.filter(renter=customer_id)
+    serializer = RentSeriallizer(rents, many=True)
+    serialized_rents = serializer.data
+    return Response({"rents": serialized_rents}, status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_transaction(request):
-   customer_id = request.auth.payload.get("user_id")
-   transactions = Transaction.objects.filter(user=customer_id)
-   serializer = TransactionSeriallizer(transactions, many=True)
-   serialized_transactions = serializer.data
-   return Response({"transactions": serialized_transactions}, status=status.HTTP_200_OK)
+    customer_id = request.auth.payload.get("user_id")
+    transactions = Transaction.objects.filter(user=customer_id)
+    serializer = TransactionSeriallizer(transactions, many=True)
+    serialized_transactions = serializer.data
+    return Response({"transactions": serialized_transactions}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -379,4 +381,3 @@ def get_all_transactions(request):
 def get_items_in_order(order_id):
     items = OrderItem.objects.filter(order_id=order_id)
     return items
-

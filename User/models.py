@@ -70,7 +70,7 @@ class Add_info(models.Model):
 
 class Order(models.Model):
     id = models.AutoField(primary_key=True)
-    user = models.OneToOneField(Customer, on_delete=models.CASCADE)
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
     STATUS_CHOICES = [
         ('Cancelled', 'Cancelled'),
         ('Processing', 'Processing'),
@@ -79,6 +79,7 @@ class Order(models.Model):
     ]
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='Processing')
+    total = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
 
 ############ ---------OrderItem MODEL---------############
@@ -89,8 +90,8 @@ class OrderItem(models.Model):
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
     price = models.DecimalField(decimal_places=2, max_digits=8,editable=False)
     quantity = models.IntegerField()
+    total = models.FloatField(editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
-
     class Meta:
         unique_together = ('order_id', 'product_id')
 

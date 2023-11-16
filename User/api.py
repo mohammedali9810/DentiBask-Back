@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import permission_classes, api_view
+
+from Products.models import Product
 from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent, Transaction
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer,
                           OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer)
@@ -46,7 +48,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
 class RentViewSet(viewsets.ModelViewSet):
@@ -381,3 +383,43 @@ def get_all_transactions(request):
 def get_items_in_order(order_id):
     items = OrderItem.objects.filter(order_id=order_id)
     return items
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_order(request):
+    if request.method == 'POST':
+        customer_email = request.auth.payload.get('user_id')
+        try:
+            user_instance = Customer.objects.get(pk=customer_email)
+        except Customer.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        orderitems_data = request.data.get('orderitem_set', [])
+        total = 0
+
+        # Create an Order instance
+        order_serializer = OrderSeriallizer(data={'user': user_instance, 'status': 'Processing', 'total': 0})
+        if order_serializer.is_valid():
+            order = order_serializer.save()
+        else:
+            return Response(order_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        for orderitem_data in orderitems_data:
+            # Add the order_id to the orderitem_data
+            orderitem_data['order_id'] = order.id
+            orderitem_serializer = OrderItemSeriallizer(data=orderitem_data)
+            if orderitem_serializer.is_valid():
+                order_item = orderitem_serializer.save()
+            else:
+                order.delete()
+                return Response(orderitem_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Update total for the Order
+            total += order_item.total
+
+        # Update the total field for the Order
+        order.total = total
+        order.save()
+
+        return Response({"msg": "Order created successfully.", "order_id": order.id}, status=status.HTTP_201_CREATED)

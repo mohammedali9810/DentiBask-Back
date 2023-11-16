@@ -1,8 +1,12 @@
 .idea
 db.sqlite3
 env
+venv
 User/migrations
 api/migrations
 Products/migrations
 _pycache_
 migrations
+User/__pycache__
+api/__pycache__
+Products/__pycache__

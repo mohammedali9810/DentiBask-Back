@@ -24,7 +24,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSeriallizer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         partial = kwargs.pop('partial', False)
@@ -81,7 +81,7 @@ def get_all_products(request):
     # Return the paginated response
     return paginator.get_paginated_response(serialized_products)
 
-@api_view(['PUT'])
+@api_view(['PATCH'])
 @permission_classes([IsAuthenticated, IsAdminUser])
 def update_product(request):
     product_id = request.data.get('id')
@@ -94,16 +94,35 @@ def update_product(request):
     categorry_id = request.data.get('categorry_id', product.Categ_id.id)
     category = get_object_or_404(Category, pk=categorry_id)
     product.Categ_id = category
-    if 'image' in request.data and request.data['image'] and request.data['image'] != "":
-        product.image = request.data['image']
-    else:
-        request.data['image'] = product.image
+    try:
+        if 'image' in request.data and request.data['image']:
+            # Access the name attribute of the InMemoryUploadedFile object
+            image_name = request.data['image']
+
+            # Check if the image name starts with the specified URL
+            if image_name.startswith('https://dentibaskbucket.s3.amazonaws.com/images/product/'):
+                product.full_clean()
+                product.save()
+                # If the image name starts with the specified URL, do not update it
+                return Response({"msg": "Data has been modified and no image added"}, status=status.HTTP_200_OK)
+            else:
+                # If the image name doesn't start with the specified URL, update the category's image
+                category.image = request.data['image']
+    except KeyError:
+        # Handle the case where 'image' key is not present in the request data
+        return Response({"msg": "Invalid request data"}, status=status.HTTP_400_BAD_REQUEST)
+
+
     try:
         product.full_clean()
         product.save()
         return Response({"msg": "Data has been modified"}, status=status.HTTP_200_OK)
     except ValidationError as e:
         return Response({"msg": "Wrong data", "error": e.message_dict}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+    ########################################################################
 
 @api_view(['GET'])
 def get_categories(request):

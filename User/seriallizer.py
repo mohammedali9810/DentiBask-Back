@@ -31,26 +31,27 @@ class AddInfoSeriallizer(serializers.ModelSerializer):
         model = Add_info
         fields = '__all__'
 
-class OrderSeriallizer(serializers.ModelSerializer):
-    class Meta:
-        model = Order
-        fields = '__all__'
 class OrderItemSeriallizer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = '__all__'
     def create(self, validated_data):
         product_price = validated_data.get('product_id').price
+        total = product_price * validated_data['quantity']
         orderitem_data = {
             'order_id': validated_data['order_id'],
             'product_id': validated_data['product_id'],
             'quantity': validated_data['quantity'],
             'price': product_price,
+            'total': total,
         }
         orderitem = OrderItem.objects.create(**orderitem_data)
         return orderitem
 
-
+class OrderSeriallizer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'
 
 class ClinicSeriallizer(serializers.ModelSerializer):
     class Meta:

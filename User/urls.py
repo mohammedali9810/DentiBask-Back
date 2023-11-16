@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet, RentViewSet, AddInfoViewSet,
    PayInfoViewSet, MyObtainToken, check_email, register, activate_account,
                   add_clinic, get_user_clinic, get_all_clinics, delete_clinic, delete_user, get_csrf_token,userdata,update_customer
-,get_all_orders,get_user_order,get_user_rent,get_all_rents,get_user_transaction,get_all_transactions,get_items_in_order)
+,get_all_orders,get_user_order,get_user_rent,get_all_rents,get_user_transaction,get_all_transactions,get_items_in_order
+                  ,create_order)
 
 
 router = DefaultRouter()
@@ -40,4 +41,5 @@ urlpatterns = [
 
     path('userdata/', userdata, name='userdata'),
 path('update_customer/', update_customer, name='update_customer'),
+path('create_order/', create_order, name='create_order'),
 ]

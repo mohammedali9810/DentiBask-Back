@@ -31,12 +31,13 @@ class Customer(models.Model):
     image = models.ImageField(upload_to=unique_image_customer)
     is_active = models.BooleanField(default=False)
 
-    def __str__(self):
+    def _str_(self):
         return self.email
 
 
 ############ ---------Payment-Info MODEL---------############
 class Pay_inf(models.Model):
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)
     card_name = models.CharField(max_length=200)
     exp_date = models.DateField()
@@ -56,7 +57,7 @@ class Add_info(models.Model):
     image = models.ImageField(default="default.jpg",
                               upload_to="addinfo/profile_pics", blank=True)
 
-    def __str__(self):
+    def _str_(self):
         if self.customer:
             return f"Customer: {self.customer.name}"
         else:
@@ -139,4 +140,4 @@ class Transaction(models.Model):
     id = models.AutoField(primary_key=True)
     amount = models.IntegerField()
     created_at = models.DateField(auto_now_add=True)
-    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)

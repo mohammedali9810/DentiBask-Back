@@ -121,8 +121,8 @@ class Rent(models.Model):
     id = models.AutoField(primary_key=True)
     start_date = models.DateField()
     end_date = models.DateField()
-    duration_months = models.IntegerField()
-    price = models.DecimalField(decimal_places=2, max_digits=2)
+    duration_months = models.IntegerField(editable=False)
+    price = models.FloatField()
     renter = models.ForeignKey(Customer, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 

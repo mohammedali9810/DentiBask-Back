@@ -32,7 +32,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSeriallizer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
 class ClinicViewSet(viewsets.ModelViewSet):
@@ -40,7 +40,7 @@ class ClinicViewSet(viewsets.ModelViewSet):
     serializer_class = ClinicSeriallizer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
 class CustomerViewSet(viewsets.ModelViewSet):
@@ -48,7 +48,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
 class RentViewSet(viewsets.ModelViewSet):
@@ -56,25 +56,25 @@ class RentViewSet(viewsets.ModelViewSet):
     serializer_class = RentSeriallizer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 class OrderItemViewSet(viewsets.ModelViewSet):
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSeriallizer
     lookup_field = 'pk'
-
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 class PayInfoViewSet(viewsets.ModelViewSet):
     queryset = Pay_inf.objects.all()
     serializer_class = PayInfoSeriallizer
     lookup_field = 'pk'
-
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 class AddInfoViewSet(viewsets.ModelViewSet):
     queryset = Add_info.objects.all()
     serializer_class = AddInfoSeriallizer
     lookup_field = 'pk'
-
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 class MyObtainToken(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
@@ -182,6 +182,14 @@ def get_csrf_token(request):
     token = get_token(request)
     return JsonResponse({'csrfToken': token})
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated,IsAdminUser])
+def get_all_customers(request):
+    paginator = CustomPagination()
+    customers = Customer.objects.filter(is_active=False)
+    paginated_customers = paginator.paginate_queryset(customers, request)
+    seriallized_customers = CustomerSerializer(paginated_customers,many=True).data
+    return paginator.get_paginated_response(seriallized_customers)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -206,7 +214,7 @@ def add_clinic(request):
         raise ValidationError(
             {"msg": "Invalid numeric values for area or price."}, code=status.HTTP_400_BAD_REQUEST)
     Clinic.objects.create(title=title, desc=desc, user=customer,
-                          location=location, area=area, price=price, image=image)
+                          location=location, area=area, price=price, image=image, is_deleted=False)
     return Response({"msg": "Clinic added."}, status=status.HTTP_201_CREATED)
 
 
@@ -214,7 +222,7 @@ def add_clinic(request):
 @permission_classes([IsAuthenticated])
 def get_user_clinic(request):
     customer_id = request.auth.payload.get("user_id")
-    clinics = Clinic.objects.filter(user=customer_id)
+    clinics = Clinic.objects.filter(user=customer_id,is_deleted=False)
     serializer = ClinicSeriallizer(clinics, many=True)
     serialized_clinics = serializer.data
     return Response({"clinics": serialized_clinics}, status=status.HTTP_200_OK)
@@ -223,7 +231,7 @@ def get_user_clinic(request):
 @api_view(['GET'])
 def get_all_clinics(request):
     paginator = CustomPagination()
-    clinics = Clinic.objects.all()
+    clinics = Clinic.objects.filter(is_deleted=False)
     paginated_clinics = paginator.paginate_queryset(clinics, request)
 
     # Serialize the paginated products
@@ -246,7 +254,8 @@ def delete_clinic(request):
         return Response({"msg": "Clinic not found."}, status=status.HTTP_404_NOT_FOUND)
 
     if customer == clinic.user:
-        clinic.delete()
+        clinic.is_deleted = True
+        clinic.save()
         return Response({"msg": "Clinic deleted."}, status=status.HTTP_204_NO_CONTENT)
     else:
         return Response({"msg": "Not authorized to delete this clinic."}, status=status.HTTP_403_FORBIDDEN)
@@ -259,8 +268,10 @@ def delete_user(request):
         customer_email = request.data.get('customer_email')
         customer = Customer.objects.get(email=customer_email)
         user = User.objects.get(email=customer_email)
-        customer.delete()
-        user.delete()
+        customer.is_active = False
+        customer.save()
+        user.is_active = False
+        user.save()
     except:
         return Response({"msg": "Can not find user or customer."}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"msg": "User Found."}, status=status.HTTP_204_NO_CONTENT)
@@ -322,7 +333,7 @@ def update_customer(request):
 @permission_classes([IsAuthenticated])
 def get_user_order(request):
     customer_id = request.auth.payload.get("user_id")
-    orders = Order.objects.filter(user=customer_id)
+    orders = Order.objects.filter(user=customer_id,is_deleted=False)
     serializer = OrderSeriallizer(orders, many=True)
     serialized_orders = serializer.data
     return Response({"orders": serialized_orders}, status=status.HTTP_200_OK)
@@ -342,7 +353,7 @@ def get_user_rent(request):
 @permission_classes([IsAuthenticated])
 def get_user_transaction(request):
     customer_id = request.auth.payload.get("user_id")
-    transactions = Transaction.objects.filter(user=customer_id)
+    transactions = Transaction.objects.filter(user=customer_id,is_deleted=False)
     serializer = TransactionSeriallizer(transactions, many=True)
     serialized_transactions = serializer.data
     return Response({"transactions": serialized_transactions}, status=status.HTTP_200_OK)
@@ -351,7 +362,7 @@ def get_user_transaction(request):
 @api_view(['GET'])
 def get_all_orders(request):
     paginator = CustomPagination()
-    orders = Order.objects.all()
+    orders = Order.objects.filter(is_deleted=False)
     paginated_orders = paginator.paginate_queryset(orders, request)
 
     serializer = OrderSeriallizer(paginated_orders, many=True)
@@ -363,7 +374,7 @@ def get_all_orders(request):
 @api_view(['GET'])
 def get_all_rents(request):
     paginator = CustomPagination()
-    rents = Rent.objects.all()
+    rents = Rent.objects.filter(is_deleted=False)
     paginated_rents = paginator.paginate_queryset(rents, request)
 
     serializer = RentSeriallizer(paginated_rents, many=True)
@@ -375,7 +386,7 @@ def get_all_rents(request):
 @api_view(['GET'])
 def get_all_transactions(request):
     paginator = CustomPagination()
-    transactions = Transaction.objects.all()
+    transactions = Transaction.objects.filter(is_deleted=False)
     paginated_transactions = paginator.paginate_queryset(transactions, request)
 
     serializer = TransactionSeriallizer(paginated_transactions, many=True)
@@ -403,7 +414,7 @@ def create_order(request):
         total = 0
 
         # Create an Order instance
-        order_serializer = OrderSeriallizer(data={'user': user_instance, 'status': 'Processing', 'total': 0})
+        order_serializer = OrderSeriallizer(data={'user': user_instance, 'status': 'Processing', 'total': 0,'is_deleted': False})
         if order_serializer.is_valid():
             order = order_serializer.save()
         else:

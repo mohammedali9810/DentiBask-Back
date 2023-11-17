@@ -25,19 +25,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     lookup_field = 'pk'
     pagination_class = CustomPagination
     # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        partial = kwargs.pop('partial', False)
-        mutable_data = request.data.copy()
-        if 'image' not in mutable_data or not mutable_data['image']:
-            mutable_data['image'] = instance.image
-
-        serializer = self.get_serializer(instance, data=mutable_data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-
-        self.perform_update(serializer)
-
-        return Response(serializer.data)
     def list(self, request, *args, **kwargs):
         category_name = request.query_params.get('category', None)
 
@@ -65,13 +52,13 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySeriallizer
     lookup_field = 'pk'
-    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
 @api_view(['GET'])
 def get_all_products(request):
     paginator = CustomPagination()
-    products = Product.objects.all()
+    products = Product.objects.filter(is_deleted=False)
     paginated_products = paginator.paginate_queryset(products, request)
 
     # Serialize the paginated products
@@ -128,7 +115,7 @@ def update_product(request):
 
 @api_view(['GET'])
 def get_categories(request):
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_deleted=False)
     seriallized_categories = CategorySeriallizer(categories,many=True).data
     return Response(seriallized_categories,status=status.HTTP_200_OK)
 
@@ -163,7 +150,18 @@ def add_product(request):
         traceback.print_exc()
         return Response({"msg": "Internal Server Error", "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def delete_product(request):
+    product_id = request.GET.get('product_id')
+    print(product_id)
+    try:
+        product = Product.objects.get(pk=product_id)
+    except Category.DoesNotExist:
+        return Response({"msg": " Product not found"}, status=status.HTTP_400_BAD_REQUEST)
+    product.is_deleted = True
+    product.save()
+    return Response({"msg": " Category deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated, IsAdminUser])
@@ -173,7 +171,8 @@ def delete_category(request):
         category = Category.objects.get(pk=category_id)
     except Category.DoesNotExist:
         return Response({"msg": " Category not found"}, status=status.HTTP_400_BAD_REQUEST)
-    category.delete()
+    category.is_deleted = True
+    category.save()
     return Response({"msg": " Category deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['PATCH'])

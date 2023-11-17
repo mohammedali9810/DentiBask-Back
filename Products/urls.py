@@ -2,7 +2,7 @@ from django.urls import path,include
 from rest_framework.routers import DefaultRouter
 from .api import (ProductViewSet, CategoryViewSet, get_csrf_token
 ,get_all_products,update_product,get_categories,get_category_products,add_product,delete_category,update_category
-                  ,products_catgory,product_detail)
+                  ,products_catgory,product_detail,delete_product)
 
 router = DefaultRouter()
 router.register(r'products',ProductViewSet)
@@ -18,4 +18,5 @@ urlpatterns=[path('', include(router.urls)),path('get_csrf_token/',get_csrf_toke
 ,path('update_category/',update_category,name='update_category')
     , path('products_catgory/', products_catgory, name='products_catgory')
     , path('product_detail/', product_detail, name='product_detail')
+    , path('delete_product/', delete_product, name='delete_product')
              ]

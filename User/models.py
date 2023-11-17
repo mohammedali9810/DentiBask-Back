@@ -32,7 +32,6 @@ class Customer(models.Model):
                              ], blank=True)
     image = models.ImageField(upload_to=unique_image_customer, blank=True, null=True)
     is_active = models.BooleanField(default=False)
-
     def _str_(self):
         return self.email
 
@@ -83,6 +82,7 @@ class Order(models.Model):
         max_length=20, choices=STATUS_CHOICES, default='Processing')
     total = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
+    is_deleted = models.BooleanField(default=False)
 
 ############ ---------OrderItem MODEL---------############
 
@@ -116,7 +116,7 @@ class Clinic(models.Model):
     image = models.ImageField(upload_to=unique_image_clinic)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    is_deleted = models.BooleanField(default=False)
 ############ ---------Rent MODEL---------############
 
 
@@ -128,7 +128,7 @@ class Rent(models.Model):
     price = models.FloatField()
     renter = models.ForeignKey(Customer, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    is_deleted = models.BooleanField(default=False)
     def save(self, *args, **kwargs):
         # Calculate duration in months based on start_date and end_date
         if self.start_date and self.end_date:
@@ -144,3 +144,4 @@ class Transaction(models.Model):
     amount = models.IntegerField()
     created_at = models.DateField(auto_now_add=True)
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    is_deleted = models.BooleanField(default=False)

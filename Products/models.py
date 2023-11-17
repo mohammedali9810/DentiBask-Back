@@ -17,7 +17,7 @@ class Category(models.Model):
     name = models.CharField(max_length=200,unique=True)
     desc = models.TextField()
     image = models.ImageField(null=False, blank=False,upload_to=unique_image_name)
-
+    is_deleted = models.BooleanField(default=False)
     #Admin_id
 
 def unique_image_product(instance, filename):
@@ -37,8 +37,8 @@ class Product(models.Model):
     unit = models.CharField(max_length=20)
     image = models.ImageField(null=False, blank=False,upload_to=unique_image_product)
     stock = models.IntegerField(default=0)
+    is_deleted = models.BooleanField(default=False)
     Categ_id = models.ForeignKey(Category, on_delete=models.CASCADE)
-
 
     def get_img(self):
         return f"/media/{self.image}"

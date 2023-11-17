@@ -19,6 +19,10 @@ DentiBask/__pycache__/wsgi.cpython-311.pyc
 Products/__pycache__/__init__.cpython-311.pyc
 Products/__pycache__/admin.cpython-311.pyc
 Products/__pycache__/api.cpython-311.pyc
+Products/__pycache__/models.cpython-311.pyc
+Products/__pycache__/apps.cpython-311.pyc
+Products/__pycache__/seriallizer.cpython-311.pyc
+Products/__pycache__/urls.cpython-311.pyc
 Products/__pycache__/apps.cpython-311.pyc
 Products/__pycache__/models.cpython-311.pyc
 Products/__pycache__/seriallizer.cpython-311.pyc

@@ -80,6 +80,7 @@ class MyObtainToken(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         username = request.data.get("username")
         password = request.data.get("password")
+        print(password)
         if not username or not password:
             return Response({"error": "Both username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -94,7 +95,6 @@ class MyObtainToken(TokenObtainPairView):
 @api_view(['GET'])
 def check_email(request):
     email = request.GET.get('username')
-    print(email)
     try:
         customer = Customer.objects.get(email=email)
     except:
@@ -278,41 +278,45 @@ def userdata(request):
     return Response(serialized_customer, status=status.HTTP_200_OK)
 
 
-@api_view(['PUT'])
+@api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def update_customer(request):
-    customer_id = request.auth.payload.get('user_id')
-    customer = Customer.objects.get(pk=customer_id)
-    user = User.objects.get(pk=customer_id)
-    password = request.data.get('vertifypassword')
+    try:
+        customer_id = request.auth.payload.get('user_id')
+        customer = Customer.objects.get(pk=customer_id)
+        user = User.objects.get(pk=customer_id)
+        password = request.data.get('vertifypassword')
 
-    if user.check_password(password):
-        try:
-            phone = request.data.get('phone')
-            image = request.data.get('image')
-            username = request.data.get('username')
+        if user.check_password(password):
+            new_phone = request.data.get('phone', '')
+            if new_phone:
+                customer.phone = new_phone
+            new_username = request.data.get('username', '')
+            if new_username:
+                customer.name = new_username
             new_password = request.data.get('password')
-
-            if phone:
-                customer.phone = phone
-            if image:
-                customer.image = image
-            if username:
-                user.username = username
-                user.email = username
-                customer.name = username
             if new_password:
                 user.set_password(new_password)
-
-            customer.save()
+            user.full_clean()
             user.save()
 
-            return Response({"msg": "Data has been modified"}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"msg": "Error updating data", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    else:
-        return Response({"msg": "Wrong data"}, status=status.HTTP_400_BAD_REQUEST)
-
+            if 'image' in request.data and request.data['image']:
+                customer.image = request.data['image']
+                customer.full_clean()
+                customer.save()
+                return Response({"msg": "Data has been modified"}, status=status.HTTP_200_OK)
+            else:
+                customer.full_clean()
+                customer.save()
+                return Response({"msg": "Data has been modified"}, status=status.HTTP_200_OK)
+    except Customer.DoesNotExist:
+        return Response({"msg": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+    except User.DoesNotExist:
+        return Response({"msg": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    except KeyError:
+        return Response({"msg": "Invalid request data"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"msg": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

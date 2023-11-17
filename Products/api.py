@@ -107,7 +107,9 @@ def update_product(request):
                 return Response({"msg": "Data has been modified and no image added"}, status=status.HTTP_200_OK)
             else:
                 # If the image name doesn't start with the specified URL, update the category's image
-                category.image = request.data['image']
+                product.image = request.data['image']
+                product.full_clean()
+                product.save()
     except KeyError:
         # Handle the case where 'image' key is not present in the request data
         return Response({"msg": "Invalid request data"}, status=status.HTTP_400_BAD_REQUEST)
@@ -187,12 +189,11 @@ def update_category(request):
             # Access the name attribute of the InMemoryUploadedFile object
             image_name = request.data['image']
 
-            # Check if the image name starts with the specified URL
             if image_name.startswith('https://dentibaskbucket.s3.amazonaws.com/images/category/'):
-                # If the image name starts with the specified URL, do not update it
+                category.full_clean()
+                category.save()
                 return Response({"msg": "Data has been modified and no image added"}, status=status.HTTP_200_OK)
             else:
-                # If the image name doesn't start with the specified URL, update the category's image
                 category.image = request.data['image']
     except KeyError:
         # Handle the case where 'image' key is not present in the request data

@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.utils.translation import gettext_lazy as _
 
 from Products.models import Product
-from .models import Customer,Pay_inf,Add_info,Order,OrderItem,Clinic,Rent
+from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent, Transaction
 
 
 @action(detail=False, methods=['DELETE'])
@@ -84,9 +84,23 @@ class RentSeriallizer(serializers.ModelSerializer):
 
 
 class TransactionSeriallizer(serializers.ModelSerializer):
-   class Meta:
-       model = Order
-       fields = '__all__'
+    class Meta:
+        model = Transaction
+        fields = '__all__'
+        read_only_fields = ['is_deleted']
+
+    def create(self, validated_data):
+        order = validated_data['order_id']
+        order_amount = order.total  # Use the total field directly
+        transaction_data = {
+            'order_id': order,
+            'amount': order_amount,
+            'user': validated_data['user'],
+        }
+        transaction = Transaction.objects.create(**transaction_data)
+        return transaction
+
+
 
 class CustomerSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

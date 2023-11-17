@@ -4,7 +4,8 @@ from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet
    PayInfoViewSet, MyObtainToken, check_email, register, activate_account,
                   add_clinic, get_user_clinic, get_all_clinics, delete_clinic, delete_user, get_csrf_token,userdata,update_customer
 ,get_all_orders,get_user_order,get_user_rent,get_all_rents,get_user_transaction,get_all_transactions,get_items_in_order
-                  ,create_order,get_all_customers)
+                  ,create_order,get_all_customers,get_one_user_orders,get_order_items_admin
+                  ,add_transaction,cancel_order,TransactionViewSet)
 
 
 router = DefaultRouter()
@@ -15,6 +16,7 @@ router.register('customer', CustomerViewSet)
 router.register('rent', RentViewSet)
 router.register('addinfo', AddInfoViewSet)
 router.register('payinfo', PayInfoViewSet)
+router.register('transaction', TransactionViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -43,4 +45,8 @@ urlpatterns = [
 path('update_customer/', update_customer, name='update_customer'),
 path('create_order/', create_order, name='create_order'),
 path('get_all_customers/', get_all_customers, name='get_all_customers'),
+path('get_one_user_orders/', get_one_user_orders, name='get_one_user_orders'),
+path('get_order_items_admin/', get_order_items_admin, name='get_order_items_admin'),
+path('add_transaction/', add_transaction, name='add_transaction'),
+path('cancel_order/', cancel_order, name='cancel_order'),
 ]

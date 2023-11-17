@@ -141,7 +141,8 @@ class Rent(models.Model):
 
 class Transaction(models.Model):
     id = models.AutoField(primary_key=True)
-    amount = models.IntegerField()
+    amount = models.FloatField(editable=False)
     created_at = models.DateField(auto_now_add=True)
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    order_id = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='transaction')
     is_deleted = models.BooleanField(default=False)

@@ -76,6 +76,12 @@ class AddInfoViewSet(viewsets.ModelViewSet):
     lookup_field = 'pk'
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
+class TransactionViewSet(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSeriallizer
+    lookup_field = 'pk'
+    pagination_class = CustomPagination
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 class MyObtainToken(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         username = request.data.get("username")
@@ -399,6 +405,16 @@ def get_items_in_order(order_id):
     items = OrderItem.objects.filter(order_id=order_id)
     return items
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated,IsAdminUser])
+def get_one_user_orders(request):
+    customer_email = request.GET.get('customer_email')
+    customer = Customer.objects.get(email=customer_email)
+    orders = Order.objects.filter(user=customer.user.id,is_deleted=False)
+    serializer = OrderSeriallizer(orders, many=True)
+    serialized_orders = serializer.data
+    return Response({"orders": serialized_orders}, status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -411,6 +427,8 @@ def create_order(request):
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
         orderitems_data = request.data.get('orderitem_set', [])
+        if not orderitems_data:
+            return Response({"msg":"Items must be provided"}, status=status.HTTP_400_BAD_REQUEST)
         total = 0
 
         # Create an Order instance
@@ -437,4 +455,55 @@ def create_order(request):
         order.total = total
         order.save()
 
-        return Response({"msg": "Order created successfully.", "order_id": order.id}, status=status.HTTP_201_CREATED)
+        return Response({"order_id": "Order created successfully.", "order_id": order.id}, status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated,IsAdminUser])
+def get_order_items_admin(request):
+    order_id = request.GET.get('order_id')
+    print(order_id)
+    try:
+        orderitems = OrderItem.objects.filter(order_id=order_id)
+        print(orderitems)
+    except OrderItem.DoesNotExist:
+        return Response({"msg":"can not find order items for this order"}, status=status.HTTP_400_BAD_REQUEST)
+    seriallized_items = OrderItemSeriallizer(orderitems,many=True).data
+    return Response(seriallized_items,status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_transaction(request):
+    customer_id = request.auth.payload.get("user_id")
+    customer = Customer.objects.get(pk=customer_id)
+    order_id = request.data.get("order_id")
+    order = Order.objects.get(pk=order_id)
+
+    if customer_id == order.user.user.id:
+        order.status = "Processing"
+        order.save()
+
+        # Use the serializer to create a Transaction instance
+        serializer = TransactionSeriallizer(data={'order_id': order_id, 'user': customer})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"msg": "Transaction has been done successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({"msg": "You are not authorized"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def cancel_order(request):
+    customer_id = request.auth.payload.get("user_id")
+    order_id = request.data.get("order_id")
+    order = Order.objects.get(pk=order_id)
+    print(order_id)
+    if customer_id == order.user.user.id:
+        order.status = "Cancelled"
+        order.save()
+        return Response({"msg":"Order has been Cancelled"},status=status.HTTP_200_OK)
+    else:
+        return Response({"msg": "You are not authorized"}, status=status.HTTP_400_BAD_REQUEST)

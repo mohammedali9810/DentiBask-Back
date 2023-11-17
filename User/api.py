@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import permission_classes, api_view
+from django.shortcuts import get_object_or_404
 
 from Products.models import Product
 from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent, Transaction
@@ -382,8 +383,11 @@ def get_all_transactions(request):
 
 def get_items_in_order(order_id):
     items = OrderItem.objects.filter(order_id=order_id)
-    return items
 
+    serializer = OrderItemSeriallizer(items, many=True)
+    serialized_order_items = serializer.data
+
+    return Response({"orderItems": serialized_order_items}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -423,3 +427,48 @@ def create_order(request):
         order.save()
 
         return Response({"msg": "Order created successfully.", "order_id": order.id}, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_order_status(request, order_id):
+    try:
+        order = Order.objects.get(id=order_id)
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    new_status = request.data.get('new_status', None)
+
+    if new_status is None or new_status not in dict(Order.STATUS_CHOICES).keys():
+        return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Your logic to update the order status goes here
+        order.status = new_status
+        order.save()
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    serializer = OrderSeriallizer(order)
+    return Response({"order": serializer.data}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_order_status(request, order_id):
+    try:
+        order = Order.objects.get(id=order_id)
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # You can add additional logic here to handle saving the order status to the database
+    # For simplicity, let's assume you just want to return a success response
+
+    return Response({"success": True}, status=status.HTTP_200_OK)
+
+
+@api_view(['DELETE'])
+def delete_rent(request, rent_id):
+    rent_instance = get_object_or_404(Rent, id=rent_id)
+
+    if request.method == 'DELETE':
+        rent_instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

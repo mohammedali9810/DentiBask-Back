@@ -4,7 +4,7 @@ from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet
    PayInfoViewSet, MyObtainToken, check_email, register, activate_account,
                   add_clinic, get_user_clinic, get_all_clinics, delete_clinic, delete_user, get_csrf_token,userdata,update_customer
 ,get_all_orders,get_user_order,get_user_rent,get_all_rents,get_user_transaction,get_all_transactions,get_items_in_order
-                  ,create_order)
+                  ,create_order,change_order_status,save_order_status,delete_rent)
 
 
 router = DefaultRouter()
@@ -40,6 +40,11 @@ urlpatterns = [
     path('get_items_in_order/', get_items_in_order, name='get_items_in_order'),
 
     path('userdata/', userdata, name='userdata'),
-path('update_customer/', update_customer, name='update_customer'),
-path('create_order/', create_order, name='create_order'),
+    path('orders/<int:order_id>/change_status/', change_order_status, name='change_order_status'),
+    path('orders/<int:order_id>/save_status/', save_order_status, name='save_order_status'),
+
+    path('api/rents/<int:rent_id>/', delete_rent, name='delete_rent'),
+
+    path('update_customer/', update_customer, name='update_customer'),
+    path('create_order/', create_order, name='create_order'),
 ]

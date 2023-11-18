@@ -1,4 +1,3 @@
-from rest_framework.exceptions import ValidationError
 from django.contrib.auth import authenticate
 from rest_framework import viewsets, status, permissions
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -6,14 +5,12 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import permission_classes, api_view
 from django.shortcuts import get_object_or_404
-
-from Products.models import Product
 from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent, Transaction
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer,
-                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer)
+                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer, PasswordResetSerializer)
 from Products.api import CustomPagination
 from django.contrib.auth.models import User
-from .token import account_activation_token
+from .token import account_activation_token, reset_token_signer
 from django.http import JsonResponse
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.core.mail import EmailMessage
@@ -23,10 +20,16 @@ from django.utils.encoding import force_bytes, force_str
 from rest_framework.permissions import AllowAny
 from django.middleware.csrf import get_token
 from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-
+from django.core.signing import BadSignature
+from urllib.parse import quote
+from django.views.decorators.http import require_POST, require_GET
+from django.core.exceptions import ValidationError as djan_val_er
+from django.core.signing import Signer
+import uuid, ast, time
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -122,10 +125,6 @@ def check_email(request):
 #         return Response(serializer.data, status=status.HTTP_201_CREATED)
 #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
@@ -134,9 +133,6 @@ def register(request):
 
         if serializer.is_valid():
             customer = serializer.save()
-            print("Passed Serializer!")
-
-            # Set up your email content
             custom_activation_url = "localhost:3000/activate"
             mail_subject = 'Please Activate Your Account!'
             message = render_to_string('acc_active_email.html', {
@@ -146,8 +142,6 @@ def register(request):
                 'token': account_activation_token.make_token(customer),
             })
             to_email = serializer.validated_data.get('email')
-            print("Passed Email Construct")
-
             # Establish an SMTP connection and send the email
             try:
                 with smtplib.SMTP('smtp.gmail.com', 587) as server:
@@ -182,8 +176,100 @@ def register(request):
 
     except Exception as e:
         return JsonResponse({'error': 'An error occurred while processing your request.'}, status=500)
+####################################################################################################
+@api_view(['POST'])
+def reset_password_request(request):
+    serializer = PasswordResetSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # If the email doesn't exist, return a redirect URL indicating the email doesn't exist
+            return Response({'redirect_url': 'http://localhost:3000/Login', 'message': 'Email not found.'})
+
+        # Generate a one-time-use reset token
+        print(uuid.uuid4())
+        reset_token = reset_token_signer.sign(uuid.uuid4().hex)
+        # reset_token_data = {'user_id': user.pk, 'token': reset_token}
+        # reset_token = reset_token_signer.sign(reset_token_data)
+
+        # Build the reset password URL
+        reset_url = f"http://localhost:3000/reset-password/confirm/{urlsafe_base64_encode(force_bytes(user.pk))}/{quote(reset_token)}/"
+        print(reset_url)
+        print(reset_token)
+
+        # Create the message content
+        message_content = render_to_string('reset_password_email.html', {'reset_url': reset_url})
+
+        # Set up the email parameters
+        sender_email = 'djang7207@gmail.com'
+        subject = 'Password Reset'
+        receiver_email = email
+
+        # Create the MIME object
+        message = MIMEMultipart()
+        message['From'] = sender_email
+        message['To'] = receiver_email
+        message['Subject'] = subject
+        message.attach(MIMEText(message_content, 'html'))
+        print('Here Mail !!!')
+
+        max_retries = 3  # Set the maximum number of retry attempts
+        retry_delay = 5  # Set the delay between retry attempts in seconds
+
+        for attempt in range(max_retries):
+            try:
+                with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                    server.starttls()
+                    server.login(sender_email, 'nhdk jhrd pqtk bonb')  # Replace with your email password
+                    server.sendmail(sender_email, receiver_email, message.as_string())
+
+                # Return a redirect URL indicating the email exists and the link is sent
+                return Response(
+                    {'redirect_url': 'http://localhost:3000/Login', 'message': 'Password reset email sent successfully.'})
+            except Exception as e:
+                print(f'Error sending email: {str(e)}')
+                if attempt < max_retries - 1:
+                    print(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                else:
+                    return Response({'error': f'Maximum retry attempts reached. Failed to send email.'}, status=500)
+
+    return Response(serializer.errors, status=400)
 
 
+@require_GET
+def reset_password_confirm(request, uidb64, token):
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist, ObjectDoesNotExist):
+        user = None
+
+    if user is not None:
+        # Decode the reset_token_data and extract the token
+        try:
+            reset_token_data_str = urlsafe_base64_decode(token).decode()
+            reset_token_data = reset_token_data_str.split(":")
+            if len(reset_token_data) != 2:
+                raise ValueError("Malformed reset token data.")
+            reset_token = reset_token_data[1]
+        except (ValueError, BadSignature):
+            return JsonResponse({'redirect_url': 'http://localhost:3000/Login', 'error': 'Invalid token.'}, status=400)
+
+        if account_activation_token.check_token(user, reset_token):
+            # Valid token, allow the user to reset the password
+            return JsonResponse(
+                {'redirect_url': 'http://localhost:3000/reset-password',
+                 'message': 'Valid token. Allow password reset.'})
+
+    # Invalid token or user, return a redirect URL indicating an error
+    return JsonResponse({'redirect_url': 'http://localhost:3000/Login', 'error': 'Invalid user or token.'}, status=400)
+##########################################################################################
+
+##############################################################################################
 
 def activate_account(request, uidb64, token):
     try:
@@ -203,6 +289,7 @@ def activate_account(request, uidb64, token):
 def get_csrf_token(request):
     token = get_token(request)
     return JsonResponse({'csrfToken': token})
+###############################################################################################
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated,IsAdminUser])

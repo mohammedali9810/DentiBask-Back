@@ -144,3 +144,6 @@ class CustomerSerializer(serializers.ModelSerializer):
 
         return customer
 
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()

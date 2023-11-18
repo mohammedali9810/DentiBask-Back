@@ -11,6 +11,7 @@ from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet
                     reset_password_request, reset_password_confirm,get_user_orders, get_user_order,delete_order,cancel_order )
 
 
+
 router = DefaultRouter()
 router.register('order', OrderViewSet)
 router.register('orderitem', OrderItemViewSet)

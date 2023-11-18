@@ -564,7 +564,7 @@ def create_order(request):
 @permission_classes([IsAuthenticated,IsAdminUser])
 def get_order_items_admin(request):
     order_id = request.GET.get('order_id')
-    order = Order.objects.get(pk=order_id)
+    order = Order.objects.get(pk=order_id,is_deleted=False)
     try:
         orderitems = OrderItem.objects.filter(order_id=order_id)
     except OrderItem.DoesNotExist:

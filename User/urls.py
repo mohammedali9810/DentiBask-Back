@@ -4,7 +4,7 @@ from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet
    PayInfoViewSet, MyObtainToken, check_email, register, activate_account,
                   add_clinic, get_user_clinic, get_all_clinics, delete_clinic, delete_user, get_csrf_token,userdata,update_customer
 ,get_all_orders,get_user_order,get_user_rent,get_all_rents,get_user_transaction,get_all_transactions,get_items_in_order
-                  ,create_order,change_order_status,save_order_status,delete_rent)
+                  ,create_order,change_order_status,save_order_status,delete_rent, TransactionViewSet, reset_password_request, reset_password_confirm )
 
 
 router = DefaultRouter()
@@ -28,6 +28,8 @@ urlpatterns = [
     path('delete_user/', delete_user, name='delete_user'),
     path('activate/<uidb64>/<token>/', activate_account, name='activate'),
     path('register/', register, name='register'),
+    path('reset-password/', reset_password_request, name='reset-password-request'),
+    path('reset-password/confirm/<uidb64>/<token>/', reset_password_confirm, name='reset-password-confirm'),
     path('get_csrf_token/', get_csrf_token, name='get_csrf_token'),
     path('userorder/', get_user_order, name='get_user_order'),
     path('get_all_orders/', get_all_orders, name='get_all_orders'),

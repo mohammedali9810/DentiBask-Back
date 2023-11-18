@@ -406,6 +406,7 @@ def get_all_rents(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated,IsAdminUser])
 def get_all_transactions(request):
     paginator = CustomPagination()
     transactions = Transaction.objects.filter(is_deleted=False)
@@ -476,14 +477,17 @@ def create_order(request):
 @permission_classes([IsAuthenticated,IsAdminUser])
 def get_order_items_admin(request):
     order_id = request.GET.get('order_id')
-    print(order_id)
+    order = Order.objects.get(pk=order_id)
     try:
         orderitems = OrderItem.objects.filter(order_id=order_id)
-        print(orderitems)
     except OrderItem.DoesNotExist:
         return Response({"msg":"can not find order items for this order"}, status=status.HTTP_400_BAD_REQUEST)
     seriallized_items = OrderItemSeriallizer(orderitems,many=True).data
-    return Response(seriallized_items,status=status.HTTP_200_OK)
+    seriallized_order = OrderSeriallizer(order).data
+    customer = User.objects.get(pk=order.user.user.id)
+    customer_email = customer.email
+    return Response({"seriallized_items":seriallized_items,"order":seriallized_order,"customer_email":customer_email},
+                    status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -498,7 +502,6 @@ def add_transaction(request):
         order.status = "Processing"
         order.save()
 
-        # Use the serializer to create a Transaction instance
         serializer = TransactionSeriallizer(data={'order_id': order_id, 'user': customer})
         if serializer.is_valid():
             serializer.save()
@@ -568,3 +571,36 @@ def delete_rent(request, rent_id):
     if request.method == 'DELETE':
         rent_instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_transactions(request):
+    customer_id = request.auth.payload.get('user_id')
+    paginator = CustomPagination()
+    transactions = Transaction.objects.filter(is_deleted=False,user=customer_id)
+    paginated_transactions = paginator.paginate_queryset(transactions, request)
+    serializer = TransactionSeriallizer(paginated_transactions, many=True)
+    serialized_transactions = serializer.data
+    return Response({"transactions": serialized_transactions}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_order_items_user(request):
+    customer_id = request.auth.payload.get('user_id')
+    order_id = request.GET.get('order_id')
+    order = Order.objects.get(pk=order_id)
+    if customer_id == order.user.user.id:
+        try:
+            orderitems = OrderItem.objects.filter(order_id=order_id)
+        except OrderItem.DoesNotExist:
+            return Response({"msg":"can not find order items for this order"}, status=status.HTTP_400_BAD_REQUEST)
+        seriallized_items = OrderItemSeriallizer(orderitems,many=True).data
+        seriallized_order = OrderSeriallizer(order).data
+        customer = User.objects.get(pk=order.user.user.id)
+        customer_email = customer.email
+        return Response({"seriallized_items":seriallized_items,"order":seriallized_order,"customer_email":customer_email},
+                        status=status.HTTP_200_OK)
+    else:
+        return Response(
+            {"msg": "You are not validated to get this info."},
+            status=status.HTTP_400_BAD_REQUEST)

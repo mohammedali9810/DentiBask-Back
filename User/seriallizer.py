@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django.utils.translation import gettext_lazy as _
 
 from Products.models import Product
+from Products.seriallizer import ProductSeriallizer
 from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent, Transaction
 
 
@@ -47,6 +48,12 @@ class OrderItemSeriallizer(serializers.ModelSerializer):
         }
         orderitem = OrderItem.objects.create(**orderitem_data)
         return orderitem
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        product_data = ProductSeriallizer(instance.product_id).data
+        representation['product_id'] = product_data
+        return representation
 
 class OrderSeriallizer(serializers.ModelSerializer):
     class Meta:
@@ -99,6 +106,11 @@ class TransactionSeriallizer(serializers.ModelSerializer):
         }
         transaction = Transaction.objects.create(**transaction_data)
         return transaction
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['user'] = instance.user.email
+        return representation
 
 
 

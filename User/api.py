@@ -16,15 +16,15 @@ from .token import account_activation_token
 from django.http import JsonResponse
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.core.mail import EmailMessage
-from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
 from rest_framework.permissions import AllowAny
 from django.middleware.csrf import get_token
 from rest_framework.exceptions import ValidationError
-from retry import retry
-from requests.exceptions import Timeout
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -121,6 +121,10 @@ def check_email(request):
 #         return Response(serializer.data, status=status.HTTP_201_CREATED)
 #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
@@ -129,8 +133,9 @@ def register(request):
 
         if serializer.is_valid():
             customer = serializer.save()
+            print("Passed Serializer!")
 
-            # Send activation email with retries
+            # Set up your email content
             custom_activation_url = "localhost:3000/activate"
             mail_subject = 'Please Activate Your Account!'
             message = render_to_string('acc_active_email.html', {
@@ -140,16 +145,25 @@ def register(request):
                 'token': account_activation_token.make_token(customer),
             })
             to_email = serializer.validated_data.get('email')
+            print("Passed Email Construct")
 
-            # Retry sending email in case of Timeout
-            @retry(Timeout, delay=1, max_delay=5, backoff=2, jitter=(1, 2), tries=3)
-            def send_email():
-                email = EmailMessage(
-                    mail_subject, message, to=[to_email]
-                )
-                email.send()
+            # Establish an SMTP connection and send the email
+            try:
+                with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                    server.starttls()
+                    server.login('djang7207@gmail.com', 'nhdk jhrd pqtk bonb')
 
-            send_email()
+                    msg = MIMEMultipart()
+                    msg.attach(MIMEText(message, "html"))
+                    msg["Subject"] = mail_subject
+                    msg["From"] = 'djang7207@gmail.com'
+                    msg["To"] = to_email
+
+                    server.sendmail('djang7207@gmail.com', to_email, msg.as_string())
+
+                print("Email sent successfully.")
+            except Exception as e:
+                print(f"Error sending email: {e}")
 
             # Provide a success response with a redirect URL and message
             redirect_url = reverse('activate', args=[urlsafe_base64_encode(force_bytes(customer.pk)),
@@ -167,6 +181,7 @@ def register(request):
 
     except Exception as e:
         return JsonResponse({'error': 'An error occurred while processing your request.'}, status=500)
+
 
 
 def activate_account(request, uidb64, token):

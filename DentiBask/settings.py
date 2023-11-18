@@ -229,10 +229,3 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
-
-EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'djang7207@gmail.com'
-EMAIL_HOST_PASSWORD = 'nhdk jhrd pqtk bonb'
-EMAIL_PORT = 587

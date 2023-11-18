@@ -137,7 +137,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 
 CSRF_COOKIE_SAMESITE = None  # or 'Lax'
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = False
 CSRF_USE_SESSIONS = True  # To use CSRF tokens for AJAX requests
 
 

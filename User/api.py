@@ -659,6 +659,8 @@ def delete_rent(request, rent_id):
         rent_instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+#####################################################################################################
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_transactions(request):

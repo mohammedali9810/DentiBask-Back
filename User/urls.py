@@ -1,10 +1,14 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet, RentViewSet, AddInfoViewSet,
-   PayInfoViewSet, MyObtainToken, check_email, register, activate_account,
-                  add_clinic, get_user_clinic, get_all_clinics, delete_clinic, delete_user, get_csrf_token,userdata,update_customer
-,get_all_orders,get_user_order,get_user_rent,get_all_rents,get_user_transaction,get_all_transactions,get_items_in_order
-                  ,create_order,change_order_status,save_order_status,delete_rent, TransactionViewSet, reset_password_request, reset_password_confirm )
+                  PayInfoViewSet, MyObtainToken, check_email, register, activate_account,
+                  add_clinic, get_user_clinic, get_all_clinics, delete_clinic, delete_user, get_csrf_token, userdata,
+                  update_customer
+, get_all_orders, get_user_order, get_user_rent, get_all_rents, get_user_transaction, get_all_transactions,
+                  get_items_in_order
+, create_order, change_order_status, save_order_status, delete_rent, TransactionViewSet,get_order_items_admin,add_transaction,
+                  get_one_user_orders, get_all_customers,get_user_transactions,get_order_items_user,
+                    reset_password_request, reset_password_confirm )
 
 
 router = DefaultRouter()
@@ -50,4 +54,10 @@ urlpatterns = [
 
     path('update_customer/', update_customer, name='update_customer'),
     path('create_order/', create_order, name='create_order'),
+    path('get_order_items_admin/', get_order_items_admin, name='get_order_items_admin'),
+path('add_transaction/', add_transaction, name='add_transaction'),
+path('get_one_user_orders/', get_one_user_orders, name='get_one_user_orders'),
+path('get_all_customers/', get_all_customers, name='get_all_customers'),
+path('get_user_transactions/', get_user_transactions, name='get_user_transactions'),
+path('get_order_items_user/', get_order_items_user, name='get_order_items_user'),
 ]

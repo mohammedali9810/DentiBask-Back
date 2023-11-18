@@ -39,7 +39,6 @@ class Customer(models.Model):
 ############ ---------Payment-Info MODEL---------############
 class Pay_inf(models.Model):
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
     card_name = models.CharField(max_length=200)
     exp_date = models.DateField()
     card_num = models.IntegerField()
@@ -55,8 +54,6 @@ class Add_info(models.Model):
     address = models.TextField()
     pay_inf = models.ForeignKey(Pay_inf, on_delete=models.CASCADE)
     country = models.CharField(max_length=40, blank=True)
-    image = models.ImageField(default="default.jpg",
-                              upload_to="addinfo/profile_pics", blank=True)
 
     def _str_(self):
         if self.customer:
@@ -72,6 +69,7 @@ class Add_info(models.Model):
 class Order(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    # address = models.CharField(max_length=50)
     STATUS_CHOICES = [
         ('Cancelled', 'Cancelled'),
         ('Processing', 'Processing'),

@@ -470,7 +470,6 @@ def create_order(request):
         order.total = total
         order.save()
 
-<<<<<<< HEAD
         return Response({"order_id": "Order created successfully.", "order_id": order.id}, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
@@ -523,7 +522,6 @@ def cancel_order(request):
         return Response({"msg":"Order has been Cancelled"},status=status.HTTP_200_OK)
     else:
         return Response({"msg": "You are not authorized"}, status=status.HTTP_400_BAD_REQUEST)
-=======
         return Response({"msg": "Order created successfully.", "order_id": order.id}, status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
@@ -570,4 +568,3 @@ def delete_rent(request, rent_id):
     if request.method == 'DELETE':
         rent_instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
->>>>>>> origin/msayed3

@@ -693,3 +693,22 @@ def get_order_items_user(request):
         return Response(
             {"msg": "You are not validated to get this info."},
             status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_orders(request):
+    customer_id = request.auth.payload.get('user_id')
+    customer = Customer.objects.get(pk=customer_id)
+    try:
+        orders = Order.objects.filter(user=customer.user.id, is_deleted=False)
+    except Order.DoesNotExist:
+        return Response({"msg":"you have no Orders"}, status=status.HTTP_200_OK)
+    seriallized_orders = OrderSeriallizer(orders, many=True).data
+    return Response(seriallized_orders,status=status.HTTP_200_OK)
+
+@require_POST
+@permission_classes([IsAuthenticated])
+def delete_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    order.delete()
+    return JsonResponse({'message': 'Order deleted successfully'}),

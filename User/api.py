@@ -90,14 +90,16 @@ class MyObtainToken(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         username = request.data.get("username")
         password = request.data.get("password")
-        print(password)
         if not username or not password:
             return Response({"error": "Both username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
-
         user = authenticate(username=username, password=password)
         if user is not None:
+            if username == "oem":
+                role = 'admin'
+            else:
+                role = 'user'
             token = super().post(request, *args, **kwargs).data
-            return Response({"token": token})
+            return Response({"token": token,"role": role})
         else:
             return Response({"error": "Invalid username or password."}, status=status.HTTP_401_UNAUTHORIZED)
 

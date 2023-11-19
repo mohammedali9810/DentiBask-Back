@@ -8,7 +8,7 @@ from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet
                   get_items_in_order
 , create_order, change_order_status, save_order_status, delete_rent, TransactionViewSet,get_order_items_admin,add_transaction,
                   get_one_user_orders, get_all_customers,get_user_transactions,get_order_items_user,
-                    reset_password_request, reset_password_confirm,get_user_orders )
+                    reset_password_request, reset_password_confirm,get_user_orders, get_user_order )
 
 
 router = DefaultRouter()

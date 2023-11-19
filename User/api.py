@@ -104,6 +104,7 @@ class MyObtainToken(TokenObtainPairView):
             return Response({"error": "Invalid username or password."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+
 @api_view(['GET'])
 def check_email(request):
     email = request.GET.get('username')

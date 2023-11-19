@@ -60,12 +60,8 @@ def get_all_products(request):
     paginator = CustomPagination()
     products = Product.objects.filter(is_deleted=False)
     paginated_products = paginator.paginate_queryset(products, request)
-
-    # Serialize the paginated products
     serializer = ProductSeriallizer(paginated_products, many=True)
     serialized_products = serializer.data
-
-    # Return the paginated response
     return paginator.get_paginated_response(serialized_products)
 
 @api_view(['PATCH'])

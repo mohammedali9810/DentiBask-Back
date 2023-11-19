@@ -705,3 +705,10 @@ def get_user_orders(request):
         return Response({"msg":"you have no Orders"}, status=status.HTTP_200_OK)
     seriallized_orders = OrderSeriallizer(orders, many=True).data
     return Response(seriallized_orders,status=status.HTTP_200_OK)
+
+@require_POST
+@permission_classes([IsAuthenticated])
+def delete_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    order.delete()
+    return JsonResponse({'message': 'Order deleted successfully'}),

@@ -5,9 +5,9 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import permission_classes, api_view
 from django.shortcuts import get_object_or_404
-from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent, Transaction
+from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Transaction
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer,
-                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer, PasswordResetSerializer)
+                          OrderItemSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer, PasswordResetSerializer)
 from Products.api import CustomPagination
 from django.contrib.auth.models import User
 from .token import account_activation_token, reset_token_signer
@@ -55,12 +55,12 @@ class CustomerViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
-class RentViewSet(viewsets.ModelViewSet):
-    queryset = Rent.objects.all()
-    serializer_class = RentSeriallizer
-    lookup_field = 'pk'
-    pagination_class = CustomPagination
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+# class RentViewSet(viewsets.ModelViewSet):
+#     queryset = Rent.objects.all()
+#     serializer_class = RentSeriallizer
+#     lookup_field = 'pk'
+#     pagination_class = CustomPagination
+#     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 class OrderItemViewSet(viewsets.ModelViewSet):
     queryset = OrderItem.objects.all()

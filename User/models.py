@@ -118,23 +118,23 @@ class Clinic(models.Model):
 ############ ---------Rent MODEL---------############
 
 
-class Rent(models.Model):
-    id = models.AutoField(primary_key=True)
-    start_date = models.DateField()
-    end_date = models.DateField()
-    duration_months = models.IntegerField(editable=False)
-    price = models.FloatField()
-    renter = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_deleted = models.BooleanField(default=False)
-    def save(self, *args, **kwargs):
-        # Calculate duration in months based on start_date and end_date
-        if self.start_date and self.end_date:
-            self.duration_months = (
-                (self.end_date.year - self.start_date.year) * 12
-                + (self.end_date.month - self.start_date.month)
-            )
-        super(Rent, self).save(*args, **kwargs)
+# class Rent(models.Model):
+#     id = models.AutoField(primary_key=True)
+#     start_date = models.DateField()
+#     end_date = models.DateField()
+#     duration_months = models.IntegerField(editable=False)
+#     price = models.FloatField()
+#     renter = models.ForeignKey(Customer, on_delete=models.CASCADE)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     is_deleted = models.BooleanField(default=False)
+#     def save(self, *args, **kwargs):
+#         # Calculate duration in months based on start_date and end_date
+#         if self.start_date and self.end_date:
+#             self.duration_months = (
+#                 (self.end_date.year - self.start_date.year) * 12
+#                 + (self.end_date.month - self.start_date.month)
+#             )
+#         super(Rent, self).save(*args, **kwargs)
 
 
 class Transaction(models.Model):

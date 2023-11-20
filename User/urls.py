@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet, RentViewSet, AddInfoViewSet,
+from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet, AddInfoViewSet,
                   PayInfoViewSet, MyObtainToken, check_email, register, activate_account,
                   add_clinic, get_user_clinic, get_all_clinics, delete_clinic, delete_user, get_csrf_token, userdata,
                   update_customer
@@ -17,7 +17,7 @@ router.register('order', OrderViewSet)
 router.register('orderitem', OrderItemViewSet)
 router.register('clinic', ClinicViewSet)
 router.register('customer', CustomerViewSet)
-router.register('rent', RentViewSet)
+# router.register('rent', RentViewSet)
 router.register('addinfo', AddInfoViewSet)
 router.register('payinfo', PayInfoViewSet)
 router.register('transaction', TransactionViewSet)

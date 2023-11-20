@@ -8,6 +8,7 @@ Products/migrations
 pycache
 migrations
 _pycache_/
+__pycache__
 User/_pycache_
 api/_pycache_
 Products/_pycache_

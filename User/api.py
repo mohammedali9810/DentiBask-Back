@@ -10,7 +10,7 @@ from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerialize
                           OrderItemSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer, PasswordResetSerializer)
 from Products.api import CustomPagination
 from django.contrib.auth.models import User
-from .token import account_activation_token, reset_token_signer
+from .token import account_activation_token, reset_token_signer, TokenGen
 from django.http import JsonResponse
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.core.mail import EmailMessage
@@ -24,12 +24,25 @@ from django.core.exceptions import ObjectDoesNotExist
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from django.core.signing import BadSignature
+from django.core.signing import TimestampSigner, SignatureExpired, BadSignature
 from urllib.parse import quote
 from django.views.decorators.http import require_POST, require_GET
 from django.core.exceptions import ValidationError as djan_val_er
 from django.core.signing import Signer
 import uuid, ast, time
+import json
+################################
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth import get_user_model
+from django.contrib.auth import login as auth_login
+from .token import verify_one_time_token
+
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -180,6 +193,22 @@ def register(request):
     except Exception as e:
         return JsonResponse({'error': 'An error occurred while processing your request.'}, status=500)
 ####################################################################################################
+# Create a TimestampSigner instance
+timestamp_signer = TimestampSigner()
+# Instantiate TokenGenerator
+account_activation_token2 = TokenGen()
+
+# def verify_one_time_token(token_data_str, max_age):
+#     try:
+#         token_data = json.loads(token_data_str)
+#         timestamp = token_data.get('timestamp', 0)
+#         current_time = int(time.time())
+#         if current_time - timestamp <= max_age:
+#             return token_data
+#     except (json.JSONDecodeError, KeyError):
+#         pass
+#     return None
+
 @api_view(['POST'])
 def reset_password_request(request):
     serializer = PasswordResetSerializer(data=request.data)
@@ -189,19 +218,14 @@ def reset_password_request(request):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            # If the email doesn't exist, return a redirect URL indicating the email doesn't exist
             return Response({'redirect_url': 'http://localhost:3000/Login', 'message': 'Email not found.'})
 
-        # Generate a one-time-use reset token
-        print(uuid.uuid4())
-        reset_token = reset_token_signer.sign(uuid.uuid4().hex)
-        # reset_token_data = {'user_id': user.pk, 'token': reset_token}
-        # reset_token = reset_token_signer.sign(reset_token_data)
-
-        # Build the reset password URL
-        reset_url = f"http://localhost:3000/reset-password/confirm/{urlsafe_base64_encode(force_bytes(user.pk))}/{quote(reset_token)}/"
-        print(reset_url)
-        print(reset_token)
+        # Generate a one-time-use reset token with expiration time
+        reset_token_data = {'user_id': user.pk, 'timestamp': int(time.time())}
+        reset_token = account_activation_token2.generate_reset_token(user)
+        print(f"reset_token: {reset_token}")
+        # Use the token directly without encoding it again
+        reset_url = f"http://localhost:3000/reset-password/confirm/{urlsafe_base64_encode(force_bytes(user.pk))}/{reset_token}/"
 
         # Create the message content
         message_content = render_to_string('reset_password_email.html', {'reset_url': reset_url})
@@ -217,21 +241,21 @@ def reset_password_request(request):
         message['To'] = receiver_email
         message['Subject'] = subject
         message.attach(MIMEText(message_content, 'html'))
-        print('Here Mail !!!')
 
-        max_retries = 3  # Set the maximum number of retry attempts
-        retry_delay = 5  # Set the delay between retry attempts in seconds
+        # Set the maximum number of retry attempts
+        max_retries = 3
+        # Set the delay between retry attempts in seconds
+        retry_delay = 5
 
         for attempt in range(max_retries):
             try:
-                with smtplib.SMTP('smtp.gmail.com', 587) as server:
-                    server.starttls()
-                    server.login(sender_email, 'nhdk jhrd pqtk bonb')  # Replace with your email password
+                with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                    server.login(sender_email, 'kwjl hfpy nqka mvaw')
                     server.sendmail(sender_email, receiver_email, message.as_string())
 
-                # Return a redirect URL indicating the email exists and the link is sent
                 return Response(
-                    {'redirect_url': 'http://localhost:3000/Login', 'message': 'Password reset email sent successfully.'})
+                    {'redirect_url': 'http://localhost:3000/Login',
+                     'message': 'Password reset email sent successfully.'})
             except Exception as e:
                 print(f'Error sending email: {str(e)}')
                 if attempt < max_retries - 1:
@@ -242,34 +266,56 @@ def reset_password_request(request):
 
     return Response(serializer.errors, status=400)
 
-
-@require_GET
+# Your existing reset_password_confirm view
+@csrf_exempt
+@require_POST
 def reset_password_confirm(request, uidb64, token):
     try:
-        uid = urlsafe_base64_decode(uidb64).decode()
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist, ObjectDoesNotExist):
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = get_user_model().objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist):
         user = None
 
     if user is not None:
-        # Decode the reset_token_data and extract the token
-        try:
-            reset_token_data_str = urlsafe_base64_decode(token).decode()
-            reset_token_data = reset_token_data_str.split(":")
-            if len(reset_token_data) != 2:
-                raise ValueError("Malformed reset token data.")
-            reset_token = reset_token_data[1]
-        except (ValueError, BadSignature):
-            return JsonResponse({'redirect_url': 'http://localhost:3000/Login', 'error': 'Invalid token.'}, status=400)
+        # Use the TokenGen class to check the reset token
+        reset_token_data_str = TokenGen().check_reset_token(user=user, reset_token=token, max_age=3600)
 
-        if account_activation_token.check_token(user, reset_token):
-            # Valid token, allow the user to reset the password
+        # Check if reset_token_data_str is None or empty
+        if not reset_token_data_str:
             return JsonResponse(
-                {'redirect_url': 'http://localhost:3000/reset-password',
-                 'message': 'Valid token. Allow password reset.'})
+                {"redirect_url": "http://localhost:3000/Login", "error": "Reset token data is missing."},
+                status=400,
+            )
 
-    # Invalid token or user, return a redirect URL indicating an error
-    return JsonResponse({'redirect_url': 'http://localhost:3000/Login', 'error': 'Invalid user or token.'}, status=400)
+        # Print for debugging
+        print(f"reset_token_data_str: {reset_token_data_str}")
+
+        if (
+            reset_token_data_str is not None
+            and default_token_generator.check_token(user, reset_token_data_str["token"])
+        ):
+            # Valid token, allow the user to reset the password
+            new_password = request.POST.get("new_password")
+            confirm_password = request.POST.get("confirm_password")
+
+            if new_password == confirm_password:
+                user.set_password(new_password)
+                user.save()
+                # Use JsonResponse with a dictionary to send data back to the frontend
+                return JsonResponse(
+                    {"redirect_url": "http://localhost:3000/reset-password", "message": "Valid token. Password reset successful."}
+                )
+            else:
+                return JsonResponse(
+                    {"redirect_url": "http://localhost:3000/reset-password", "error": "Passwords do not match."},
+                    status=400,
+                )
+
+    return JsonResponse(
+        {"redirect_url": "http://localhost:3000/Login", "error": "Invalid user or token."},
+        status=400,
+    )
+
 ##########################################################################################
 
 ##############################################################################################

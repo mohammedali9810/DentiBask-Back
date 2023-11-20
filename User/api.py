@@ -5,9 +5,9 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import permission_classes, api_view
 from django.shortcuts import get_object_or_404
-from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Rent, Transaction
+from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Transaction
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer,
-                          OrderItemSeriallizer, RentSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer, PasswordResetSerializer)
+                          OrderItemSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer, PasswordResetSerializer)
 from Products.api import CustomPagination
 from django.contrib.auth.models import User
 from .token import account_activation_token, reset_token_signer, TokenGen
@@ -68,12 +68,12 @@ class CustomerViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
-class RentViewSet(viewsets.ModelViewSet):
-    queryset = Rent.objects.all()
-    serializer_class = RentSeriallizer
-    lookup_field = 'pk'
-    pagination_class = CustomPagination
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+# class RentViewSet(viewsets.ModelViewSet):
+#     queryset = Rent.objects.all()
+#     serializer_class = RentSeriallizer
+#     lookup_field = 'pk'
+#     pagination_class = CustomPagination
+#     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 class OrderItemViewSet(viewsets.ModelViewSet):
     queryset = OrderItem.objects.all()
@@ -103,16 +103,19 @@ class MyObtainToken(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         username = request.data.get("username")
         password = request.data.get("password")
-        print(password)
         if not username or not password:
             return Response({"error": "Both username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
-
         user = authenticate(username=username, password=password)
         if user is not None:
+            if username == "oem":
+                role = 'admin'
+            else:
+                role = 'user'
             token = super().post(request, *args, **kwargs).data
-            return Response({"token": token})
+            return Response({"token": token,"role": role})
         else:
             return Response({"error": "Invalid username or password."}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 @api_view(['GET'])

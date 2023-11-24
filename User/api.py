@@ -40,8 +40,8 @@ from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login as auth_login
-from .token import verify_one_time_token
-from Products.models import Product
+# from .token import verify_one_time_token
+from django.contrib.auth.password_validation import validate_password
 
 
 
@@ -100,22 +100,45 @@ class TransactionViewSet(viewsets.ModelViewSet):
     lookup_field = 'pk'
     pagination_class = CustomPagination
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+# class MyObtainToken(TokenObtainPairView):
+#     def post(self, request, *args, **kwargs):
+#         username = request.data.get("username")
+#         password = request.data.get("password")
+#         if not username or not password:
+#             return Response({"error": "Both username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+#         user = authenticate(username=username, password=password)
+#         if user is not None:
+#             if username == "oem":
+#                 role = 'admin'
+#             else:
+#                 role = 'user'
+#             token = super().post(request, *args, **kwargs).data
+#             return Response({"token": token,"role": role})
+#         else:
+#             return Response({"error": "Invalid username or password."}, status=status.HTTP_401_UNAUTHORIZED)
+
 class MyObtainToken(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         username = request.data.get("username")
         password = request.data.get("password")
+
         if not username or not password:
             return Response({"error": "Both username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
         user = authenticate(username=username, password=password)
+        print(user.is_authenticated)
+
         if user is not None:
-            if username == "oem":
+            if user.username == "oem":
                 role = 'admin'
             else:
                 role = 'user'
+
             token = super().post(request, *args, **kwargs).data
-            return Response({"token": token,"role": role})
+            return Response({"token": token, "role": role, "is_authenticated": True})
         else:
-            return Response({"error": "Invalid username or password."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid username or password.", "is_authenticated": False}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 
@@ -161,8 +184,8 @@ def register(request):
             to_email = serializer.validated_data.get('email')
             # Establish an SMTP connection and send the email
             try:
-                with smtplib.SMTP('smtp.gmail.com', 587) as server:
-                    server.starttls()
+                with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                    # server.starttls()
                     server.login('djang7207@gmail.com', 'hfda kzdl rzhs nrjj')
 
                     msg = MIMEMultipart()
@@ -222,14 +245,10 @@ def reset_password_request(request):
             return Response({'redirect_url': 'http://localhost:3000/Login', 'message': 'Email not found.'})
 
         # Generate a one-time-use reset token with expiration time
-        reset_token_data = {'user_id': user.pk, 'timestamp': int(time.time())}
-        reset_token = account_activation_token2.generate_reset_token(user)
-        print(f"reset_token: {reset_token}")
-        # Use the token directly without encoding it again
-        reset_url = f"http://localhost:3000/reset-password/confirm/{urlsafe_base64_encode(force_bytes(user.pk))}/{reset_token}/"
+        reset_token = default_token_generator.make_token(user)
 
-        # Create the message content
-        message_content = render_to_string('reset_password_email.html', {'reset_url': reset_url})
+        # Include the token directly in the reset URL
+        reset_url = f"http://localhost:3000/reset-password/confirm/{urlsafe_base64_encode(force_bytes(user.pk))}/{reset_token}/"
 
         # Set up the email parameters
         sender_email = 'djang7207@gmail.com'
@@ -241,6 +260,9 @@ def reset_password_request(request):
         message['From'] = sender_email
         message['To'] = receiver_email
         message['Subject'] = subject
+
+        # Create the message content
+        message_content = render_to_string('reset_password_email.html', {'reset_url': reset_url})
         message.attach(MIMEText(message_content, 'html'))
 
         # Set the maximum number of retry attempts
@@ -251,7 +273,7 @@ def reset_password_request(request):
         for attempt in range(max_retries):
             try:
                 with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-                    server.login(sender_email, 'kwjl hfpy nqka mvaw')
+                    server.login(sender_email, 'hfda kzdl rzhs nrjj')
                     server.sendmail(sender_email, receiver_email, message.as_string())
 
                 return Response(
@@ -271,51 +293,81 @@ def reset_password_request(request):
 @csrf_exempt
 @require_POST
 def reset_password_confirm(request, uidb64, token):
+    print(f"Received token from URL: {token}")  # Add this line for debugging
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = get_user_model().objects.get(pk=uid)
     except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist):
         user = None
 
-    if user is not None:
-        # Use the TokenGen class to check the reset token
-        reset_token_data_str = TokenGen().check_reset_token(user=user, reset_token=token, max_age=3600)
+    if user is not None and default_token_generator.check_token(user, token):
+        # Valid token, allow the user to reset the password
+        new_password = request.POST.get("new_password")
+        confirm_password = request.POST.get("confirm_password")
 
-        # Check if reset_token_data_str is None or empty
-        if not reset_token_data_str:
+        if new_password == confirm_password:
+            user.set_password(new_password)
+            user.save()
             return JsonResponse(
-                {"redirect_url": "http://localhost:3000/Login", "error": "Reset token data is missing."},
+                {"redirect_url": "http://localhost:3000/reset-password", "message": "Password reset successful."}
+            )
+        else:
+            return JsonResponse(
+                {"redirect_url": "http://localhost:3000/reset-password", "error": "Passwords do not match."},
                 status=400,
             )
-
-        # Print for debugging
-        print(f"reset_token_data_str: {reset_token_data_str}")
-
-        if (
-            reset_token_data_str is not None
-            and default_token_generator.check_token(user, reset_token_data_str["token"])
-        ):
-            # Valid token, allow the user to reset the password
-            new_password = request.POST.get("new_password")
-            confirm_password = request.POST.get("confirm_password")
-
-            if new_password == confirm_password:
-                user.set_password(new_password)
-                user.save()
-                # Use JsonResponse with a dictionary to send data back to the frontend
-                return JsonResponse(
-                    {"redirect_url": "http://localhost:3000/reset-password", "message": "Valid token. Password reset successful."}
-                )
-            else:
-                return JsonResponse(
-                    {"redirect_url": "http://localhost:3000/reset-password", "error": "Passwords do not match."},
-                    status=400,
-                )
 
     return JsonResponse(
         {"redirect_url": "http://localhost:3000/Login", "error": "Invalid user or token."},
         status=400,
     )
+
+
+@csrf_exempt
+@require_POST
+def update_password(request):
+    # Assuming the request data is sent as JSON
+    data = json.loads(request.body)
+
+    # Extract user ID, new password, and confirm password from the request
+    user_id_b64 = data.get("user_id")
+    new_password = data.get("new_password")
+    confirm_password = data.get("confirm_password")
+
+    try:
+        # Decode base64-encoded user ID
+        user_id = force_str(urlsafe_base64_decode(user_id_b64))
+
+        # Retrieve the user based on the user ID
+        user = get_user_model().objects.get(pk=user_id)
+
+        # Check if the new password matches the confirm password
+        if new_password == confirm_password:
+            # Validate the password using Django's built-in validators
+            validate_password(new_password, user=user)
+
+            # Reset the user's password
+            user.set_password(new_password)
+            user.save()
+
+            return JsonResponse(
+                {"redirect_url": "http://localhost:3000/Login", "message": "Password reset successful."},
+            )
+        else:
+            return JsonResponse(
+                {"redirect_url": "http://localhost:3000/reset-password", "error": "Passwords do not match."},
+                status=400,
+            )
+    except get_user_model().DoesNotExist:
+        return JsonResponse(
+            {"redirect_url": "http://localhost:3000/Login", "error": "User not found."},
+            status=400,
+        )
+    except ValidationError as e:
+        return JsonResponse(
+            {"redirect_url": "http://localhost:3000/Login", "error": e.messages[0]},
+            status=400,
+        )
 
 ##########################################################################################
 
@@ -331,7 +383,7 @@ def activate_account(request, uidb64, token):
     if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
         user.save()
-        return JsonResponse({'message': 'Activation successful'})
+        return JsonResponse({'message': 'Activation successful'}, status=200)
     else:
         return JsonResponse({'error': 'Invalid activation link'}, status=400)
 
@@ -771,3 +823,27 @@ def delete_order(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     order.delete()
     return JsonResponse({'message': 'Order deleted successfully'}),
+
+
+def curr_user(request):
+    user = request.user
+    print(user.username)
+    if user.is_authenticated:
+        if user.is_superuser:
+            # Redirect to the dashboard for admin users
+            return None
+        else:
+            # For non-admin users, you can redirect to a different page or handle as needed
+            return JsonResponse({
+                'username': user.username,
+                'email': user.email,
+                'is_authenticated': True,
+            })
+    else:
+        return JsonResponse({'is_authenticated': False})
+
+def middleware_endpoint(request):
+    # Simulate the middleware response
+    response_data = {"redirect": reverse('index')}
+    return JsonResponse(response_data)
+

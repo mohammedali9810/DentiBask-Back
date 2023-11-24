@@ -8,7 +8,7 @@ from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet
                   get_items_in_order
 , create_order, change_order_status, save_order_status, delete_rent, TransactionViewSet,get_order_items_admin,add_transaction,
                   get_one_user_orders, get_all_customers,get_user_transactions,get_order_items_user,
-                    reset_password_request, reset_password_confirm,get_user_orders, get_user_order,delete_order,cancel_order )
+                    reset_password_request, reset_password_confirm,get_user_orders, get_user_order,delete_order,cancel_order, middleware_endpoint, curr_user,update_password )
 
 
 
@@ -34,7 +34,7 @@ urlpatterns = [
     path('activate/<uidb64>/<token>/', activate_account, name='activate'),
     path('register/', register, name='register'),
     path('reset-password/', reset_password_request, name='reset-password-request'),
-    path('reset-password/confirm/<uidb64>/<token>/', reset_password_confirm, name='reset-password-confirm'),
+    # path('reset-password/confirm/<uidb64>/<token>/', reset_password_confirm, name='reset-password-confirm'),
     path('get_csrf_token/', get_csrf_token, name='get_csrf_token'),
     path('userorder/', get_user_order, name='get_user_order'),
     path('get_all_orders/', get_all_orders, name='get_all_orders'),
@@ -65,4 +65,8 @@ urlpatterns = [
 
     path('api/delete_order/<int:order_id>/', delete_order, name='delete_order'),
     path('cancel_order/<int:order_id>/', cancel_order, name='cancel_order'),
+    path('api/middleware/', middleware_endpoint, name='middleware_endpoint'),
+    path('api/current-user/', curr_user, name='current_user'),
+    path('reset-password/confirm/<str:uidb64>/<str:token>/', reset_password_confirm, name='reset_password_confirm'),
+    path('update-password/', update_password, name='update_password'),
 ]

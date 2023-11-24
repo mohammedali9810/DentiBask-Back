@@ -32,7 +32,7 @@ class Customer(models.Model):
                              ], blank=True)
     image = models.ImageField(upload_to=unique_image_customer, blank=True, null=True)
     is_active = models.BooleanField(default=False)
-    def _str_(self):
+    def __str__(self):
         return self.email
 
 

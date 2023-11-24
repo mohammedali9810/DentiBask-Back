@@ -41,6 +41,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login as auth_login
 from .token import verify_one_time_token
+from Products.models import Product
 
 
 
@@ -162,7 +163,7 @@ def register(request):
             try:
                 with smtplib.SMTP('smtp.gmail.com', 587) as server:
                     server.starttls()
-                    server.login('djang7207@gmail.com', 'nhdk jhrd pqtk bonb')
+                    server.login('djang7207@gmail.com', 'hfda kzdl rzhs nrjj')
 
                     msg = MIMEMultipart()
                     msg.attach(MIMEText(message, "html"))
@@ -582,6 +583,10 @@ def create_order(request):
         if not orderitems_data:
             return Response({"msg":"Items must be provided"}, status=status.HTTP_400_BAD_REQUEST)
         total = 0
+        for orderitem in orderitems_data:
+            product = Product.objects.get(id=orderitem['product_id'])
+            if product.stock  < orderitem['quantity']:
+                return Response({"msg": "Items is more than the stock"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create an Order instance
         order_serializer = OrderSeriallizer(data={'user': user_instance, 'status': 'Processing', 'total': 0,'is_deleted': False})
@@ -637,6 +642,11 @@ def add_transaction(request):
     if customer_id == order.user.user.id:
         order.status = "Processing"
         order.save()
+        order_items = OrderItem.objects.filter(order_id=order.id)
+        for order_item in order_items:
+            product = Product.objects.get(pk=order_item.product_id.id)
+            product.stock -= order_item.quantity
+            product.save()
 
         serializer = TransactionSeriallizer(data={'order_id': order_id, 'user': customer})
         if serializer.is_valid():

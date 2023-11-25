@@ -4,9 +4,9 @@ from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet
                   PayInfoViewSet, MyObtainToken, check_email, register, activate_account,
                   add_clinic, get_user_clinic, get_all_clinics, delete_clinic, delete_user, get_csrf_token, userdata,
                   update_customer
-, get_all_orders, get_user_rent, get_all_rents, get_user_transaction, get_all_transactions,
+, get_all_orders, get_user_transaction, get_all_transactions,
                   get_items_in_order
-, create_order, change_order_status, save_order_status, delete_rent, TransactionViewSet,get_order_items_admin,add_transaction,
+, create_order, change_order_status, save_order_status, TransactionViewSet,get_order_items_admin,add_transaction,
                   get_one_user_orders, get_all_customers,get_user_transactions,get_order_items_user,
                     reset_password_request, reset_password_confirm,get_user_orders, get_user_order,delete_order,cancel_order, middleware_endpoint, curr_user,update_password, check_reg )
 
@@ -39,8 +39,8 @@ urlpatterns = [
     path('userorder/', get_user_order, name='get_user_order'),
     path('get_all_orders/', get_all_orders, name='get_all_orders'),
 
-    path('userrent/', get_user_rent, name='get_user_rent'),
-    path('get_all_rents/', get_all_rents, name='get_all_rents'),
+    # path('userrent/', get_user_rent, name='get_user_rent'),
+    # path('get_all_rents/', get_all_rents, name='get_all_rents'),
 
     path('usertransaction/', get_user_transaction, name='get_user_transaction'),
     path('get_all_transactions/', get_all_transactions, name='get_all_transactions'),
@@ -51,7 +51,7 @@ urlpatterns = [
     path('orders/<int:order_id>/change_status/', change_order_status, name='change_order_status'),
     path('orders/<int:order_id>/save_status/', save_order_status, name='save_order_status'),
 
-    path('api/rents/<int:rent_id>/', delete_rent, name='delete_rent'),
+    # path('api/rents/<int:rent_id>/', delete_rent, name='delete_rent'),
 
     path('update_customer/', update_customer, name='update_customer'),
     path('create_order/', create_order, name='create_order'),

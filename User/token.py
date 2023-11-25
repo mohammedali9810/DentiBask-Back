@@ -103,7 +103,6 @@
 
 
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-# from django.utils import six
 import six
 from django.core.signing import Signer
 from django.core.exceptions import ObjectDoesNotExist

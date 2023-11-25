@@ -24,10 +24,10 @@
 </head>
 <body>
   <div class="container">
-    <p>Hi {{ user.username }},</p>
+    <img src="https://i.pinimg.com/originals/9c/87/99/9c879909741ebaa6b7a614071079e542.jpg" alt="Centered Image" width="200">
+    <p>Hi {{ user.name }},</p>
     <p>Please click on the link to confirm your registration:</p>
     <a href="http://{{ domain }}{% url 'activate' uidb64=uid token=token %}">Confirmation Link</a>
-    <img src="https://i.pinimg.com/originals/9c/87/99/9c879909741ebaa6b7a614071079e542.jpg" alt="Centered Image" width="200">
   </div>
 </body>
 </html>

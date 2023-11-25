@@ -6,6 +6,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import permission_classes, api_view
 from django.shortcuts import get_object_or_404
 from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Transaction
+from Products.models import Product
 from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer,
                           OrderItemSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer, PasswordResetSerializer)
 from Products.api import CustomPagination
@@ -42,6 +43,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import login as auth_login
 # from .token import verify_one_time_token
 from django.contrib.auth.password_validation import validate_password
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 
 
@@ -154,6 +157,20 @@ def check_email(request):
         return Response({"msg": "email found."}, status=status.HTTP_200_OK)
     return Response({"msg": "email Not found."}, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+def check_reg(request):
+    email = request.GET.get('email')
+    print(email)
+    try:
+        customer = Customer.objects.get(email=email)
+        print(customer)
+    except:
+        return Response({"msg": "email Not found."}, status=status.HTTP_200_OK)
+    if customer:
+        print(customer)
+        return Response({"msg": "email found."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"msg": "email Not found."}, status=status.HTTP_200_OK)
+
 
 # @api_view(['POST'])
 # @permission_classes([AllowAny])
@@ -164,6 +181,38 @@ def check_email(request):
 #         serializer.save()
 #         return Response(serializer.data, status=status.HTTP_201_CREATED)
 #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# Your existing Customer model, CustomerSerializer, and account_activation_token imports go here
+
+# @receiver(pre_save, sender=Customer)
+# def send_activation_email(sender, instance, **kwargs):
+#     if not instance.pk:
+#         custom_activation_url = "localhost:3000/activate"
+#         mail_subject = 'Please Activate Your Account!'
+#         message = render_to_string('acc_active_email.html', {
+#             'user': instance,
+#             'domain': custom_activation_url,
+#             'uid': urlsafe_base64_encode(force_bytes(instance.pk)),
+#             'token': account_activation_token.make_token(instance),
+#         })
+#         to_email = instance.email
+#
+#         try:
+#             with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+#                 server.login('djang7207@gmail.com', 'hfda kzdl rzhs nrjj')
+#
+#                 msg = MIMEMultipart()
+#                 msg.attach(MIMEText(message, "html"))
+#                 msg["Subject"] = mail_subject
+#                 msg["From"] = 'djang7207@gmail.com'
+#                 msg["To"] = to_email
+#
+#                 server.sendmail('djang7207@gmail.com', to_email, msg.as_string())
+#
+#             print("Email sent successfully.")
+#         except Exception as e:
+#             print(f"Error sending email: {e}")
+
+# Your existing Customer model, CustomerSerializer, and account_activation_token imports go here
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -222,33 +271,32 @@ timestamp_signer = TimestampSigner()
 # Instantiate TokenGenerator
 account_activation_token2 = TokenGen()
 
-# def verify_one_time_token(token_data_str, max_age):
-#     try:
-#         token_data = json.loads(token_data_str)
-#         timestamp = token_data.get('timestamp', 0)
-#         current_time = int(time.time())
-#         if current_time - timestamp <= max_age:
-#             return token_data
-#     except (json.JSONDecodeError, KeyError):
-#         pass
-#     return None
-
 @api_view(['POST'])
 def reset_password_request(request):
     serializer = PasswordResetSerializer(data=request.data)
     if serializer.is_valid():
         email = serializer.validated_data['email']
+        print(email)
+
+        email = serializer.validated_data['email']
+        print(f"Email: {email}")
 
         try:
             user = User.objects.get(email=email)
+            print(f"User found: {user.email}")
+
+            # Generate a one-time-use reset token with expiration time
+            reset_token = default_token_generator.make_token(user)
+
+            # Include the token directly in the reset URL
+            reset_url = f"http://localhost:3000/reset-password/confirm/{urlsafe_base64_encode(force_bytes(user.pk))}/{reset_token}/"
+
+            print(f"Reset URL: {reset_url}")
+
         except User.DoesNotExist:
             return Response({'redirect_url': 'http://localhost:3000/Login', 'message': 'Email not found.'})
-
-        # Generate a one-time-use reset token with expiration time
-        reset_token = default_token_generator.make_token(user)
-
-        # Include the token directly in the reset URL
-        reset_url = f"http://localhost:3000/reset-password/confirm/{urlsafe_base64_encode(force_bytes(user.pk))}/{reset_token}/"
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
 
         # Set up the email parameters
         sender_email = 'djang7207@gmail.com'
@@ -262,7 +310,8 @@ def reset_password_request(request):
         message['Subject'] = subject
 
         # Create the message content
-        message_content = render_to_string('reset_password_email.html', {'reset_url': reset_url})
+        customer = get_object_or_404(Customer, email=email)
+        message_content = render_to_string('reset_password_email.html', {'user': customer.name, 'reset_url': reset_url})
         message.attach(MIMEText(message_content, 'html'))
 
         # Set the maximum number of retry attempts

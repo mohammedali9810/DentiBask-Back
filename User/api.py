@@ -739,7 +739,6 @@ def add_transaction(request):
     customer = Customer.objects.get(pk=customer_id)
     order_id = request.data.get("order_id")
     order = Order.objects.get(pk=order_id)
-
     if customer_id == order.user.user.id:
         order.status = "Processing"
         order.save()

@@ -599,14 +599,14 @@ def get_user_order(request):
     return Response({"orders": serialized_orders}, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_user_rent(request):
-    customer_id = request.auth.payload.get("user_id")
-    rents = Rent.objects.filter(renter=customer_id)
-    serializer = RentSeriallizer(rents, many=True)
-    serialized_rents = serializer.data
-    return Response({"rents": serialized_rents}, status=status.HTTP_200_OK)
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def get_user_rent(request):
+#     customer_id = request.auth.payload.get("user_id")
+#     rents = Rent.objects.filter(renter=customer_id)
+#     serializer = RentSeriallizer(rents, many=True)
+#     serialized_rents = serializer.data
+#     return Response({"rents": serialized_rents}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -631,16 +631,16 @@ def get_all_orders(request):
     return Response({"orders": serialized_orders}, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
-def get_all_rents(request):
-    paginator = CustomPagination()
-    rents = Rent.objects.filter(is_deleted=False)
-    paginated_rents = paginator.paginate_queryset(rents, request)
+# @api_view(['GET'])
+# def get_all_rents(request):
+#     paginator = CustomPagination()
+#     rents = Rent.objects.filter(is_deleted=False)
+#     paginated_rents = paginator.paginate_queryset(rents, request)
 
-    serializer = RentSeriallizer(paginated_rents, many=True)
-    serialized_rents = serializer.data
+#     serializer = RentSeriallizer(paginated_rents, many=True)
+#     serialized_rents = serializer.data
 
-    return Response({"rents": serialized_rents}, status=status.HTTP_200_OK)
+#     return Response({"rents": serialized_rents}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -811,13 +811,13 @@ def save_order_status(request, order_id):
     return Response({"success": True}, status=status.HTTP_200_OK)
 
 
-@api_view(['DELETE'])
-def delete_rent(request, rent_id):
-    rent_instance = get_object_or_404(Rent, id=rent_id)
+# @api_view(['DELETE'])
+# def delete_rent(request, rent_id):
+#     rent_instance = get_object_or_404(Rent, id=rent_id)
 
-    if request.method == 'DELETE':
-        rent_instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+#     if request.method == 'DELETE':
+#         rent_instance.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 #####################################################################################################

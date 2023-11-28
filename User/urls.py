@@ -8,7 +8,7 @@ from .api import (OrderViewSet, OrderItemViewSet, ClinicViewSet, CustomerViewSet
                   get_items_in_order
 , create_order, change_order_status, save_order_status, delete_rent, TransactionViewSet,get_order_items_admin,add_transaction,
                   get_one_user_orders, get_all_customers,get_user_transactions,get_order_items_user,
-                    reset_password_request, reset_password_confirm,get_user_orders, get_user_order,delete_order,cancel_order, middleware_endpoint, curr_user,update_password, check_reg )
+                    reset_password_request, reset_password_confirm,get_user_orders, get_user_order,delete_order,cancel_order, middleware_endpoint, curr_user,update_password, check_reg, google_signin )
 
 
 
@@ -70,4 +70,5 @@ urlpatterns = [
     path('reset-password/confirm/<str:uidb64>/<str:token>/', reset_password_confirm, name='reset_password_confirm'),
     path('update-password/', update_password, name='update_password'),
     path('checkreg/', check_reg, name='check_email_reg'),
+    path('google-signin/', google_signin, name='check_email_reg'),
 ]

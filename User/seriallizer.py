@@ -149,6 +149,35 @@ class CustomerSerializer(serializers.ModelSerializer):
 
         return customer
 
+class Cust_signin_ser(serializers.ModelSerializer):
+    # password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Customer
+        fields = ['name', 'email', 'image']
+
+    def create(self, validated_data):
+        # Extract customer data
+        customer_data = {
+            'name': validated_data['name'],
+            'email': validated_data['email'],
+            'image': validated_data['picture'],
+        }
+
+        # Extract user data
+        user_data = {
+            'username': validated_data['email'],
+            'email': validated_data['email'],
+            'image': validated_data['picture'],
+            'is_active': True
+        }
+
+        # Create User and Customer
+        user = User.objects.create_user(**user_data)
+        customer = Customer.objects.create(user=user, **customer_data)
+
+        return customer
+
 
 class PasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()

@@ -7,7 +7,7 @@ from rest_framework.decorators import permission_classes, api_view
 from django.shortcuts import get_object_or_404
 from .models import Customer, Pay_inf, Add_info, Order, OrderItem, Clinic, Transaction
 from Products.models import Product
-from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer,
+from .seriallizer import (OrderSeriallizer, ClinicSeriallizer, CustomerSerializer, Cust_signin_ser,
                           OrderItemSeriallizer, AddInfoSeriallizer, PayInfoSeriallizer, TransactionSeriallizer, PasswordResetSerializer)
 from Products.api import CustomPagination
 from django.contrib.auth.models import User
@@ -43,6 +43,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import login as auth_login
 # from .token import verify_one_time_token
 from django.contrib.auth.password_validation import validate_password
+from rest_framework_simplejwt.tokens import RefreshToken
+from google.oauth2 import id_token
+from google.auth.transport.requests import Request
+import jwt
+import requests
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
@@ -213,7 +218,82 @@ def check_reg(request):
 #             print(f"Error sending email: {e}")
 
 # Your existing Customer model, CustomerSerializer, and account_activation_token imports go here
+#################################################################################################
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_signin(request):
+    try:
+        # Fetch Google's public keys from the JWK Set endpoint
+        token = request.data.get('token')
+        # jwks = requests.get(jwks_url).json()
+        # token="211650131656-10hp9abqvemrbvo7v13o62hq48bs5ouk.apps.googleusercontent.com"
+        # id_info = id_token.verify_oauth2_token(token, requests.Request(), jwks=jwks)
+        # email = id_info['email']
+        # name = id_info['name']
+        # print(f"EMAILOO : {email}")
+        # token = request.data.get('token')
+
+        decoded_token = jwt.decode(token, algorithms=['HS256'], options={'verify_signature': False})
+        print(f"Decoded token: {decoded_token}")
+        email = decoded_token.get('email')
+        name = decoded_token.get('name')
+        picture = decoded_token.get('picture')
+        print(f"DECODED EMAIL : {email}")
+        print(f"DECODED NAME : {name}")
+        print(f"DECODED PICTURE : {picture}")
+
+        # verified_name = id_info['name']
+        # verified_image = id_info['picture']
+
+
+        # if verified_email != email:
+        #     # Invalid email in the token
+        #     return Response({"error": "Invalid social login credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Check if the email already exists
+        existing_customer = Customer.objects.filter(email=email).first()
+
+        if existing_customer:
+            # Email exists, attempt login
+            user = authenticate(username=email, password=None)  # No password needed for social login
+            if user is not None:
+                # Login successful
+                if user.username == "oem":
+                    role = 'admin'
+                else:
+                    role = 'user'
+
+                token = RefreshToken.for_user(user).access_token
+                return Response({"token": str(token), "role": role, "is_authenticated": True})
+            else:
+                # Invalid credentials
+                return Response({"error": "Invalid social login credentials.", "is_authenticated": False}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            # Email does not exist, proceed with registration
+            serializer = Cust_signin_ser(data={'email': email, 'name': name, 'image': picture})
+            if serializer.is_valid():
+                customer = serializer.save()
+
+                # You can include the activation email logic here if needed
+
+                # Provide a success response with a redirect URL and message
+                # redirect_url = reverse('activate', args=[urlsafe_base64_encode(force_bytes(customer.pk)),
+                #                                          account_activation_token.make_token(customer)])
+                success_message = 'Check your email to activate your account.'
+                return Response({
+                    # 'redirect_url': redirect_url,
+                    'success_message': success_message,
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    except ValidationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+    # except Exception as e:
+    #     return JsonResponse({'error': 'An error occurred while processing your request.'}, status=500)
+#################################################################################################
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):

@@ -51,7 +51,7 @@ import requests
 from django.contrib.auth.models import User
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
-
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -59,7 +59,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSeriallizer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
 class ClinicViewSet(viewsets.ModelViewSet):
@@ -221,96 +221,38 @@ def check_reg(request):
 
 # Your existing Customer model, CustomerSerializer, and account_activation_token imports go here
 #################################################################################################
-class MyOauthObtainToken(TokenObtainPairView):
-    @classmethod
-    def post(self, request, *args, **kwargs):
-        role = 'user'
-        token = super().post(request, *args, **kwargs).data
-        return Response({"token": token, "role": role, "is_authenticated" :True})
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
 
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def google_signin(request):
     try:
-        # Fetch Google's public keys from the JWK Set endpoint
         token = request.data.get('token')
-        # jwks = requests.get(jwks_url).json()
-        # token="211650131656-10hp9abqvemrbvo7v13o62hq48bs5ouk.apps.googleusercontent.com"
-        # id_info = id_token.verify_oauth2_token(token, requests.Request(), jwks=jwks)
-        # email = id_info['email']
-        # name = id_info['name']
-        # print(f"EMAILOO : {email}")
-        # token = request.data.get('token')
 
         decoded_token = jwt.decode(token, algorithms=['HS256'], options={'verify_signature': False})
-        print(f"Decoded token: {decoded_token}")
         email = decoded_token.get('email')
         name = decoded_token.get('name')
-        picture = decoded_token.get('picture')
-        print(f"DECODED EMAIL : {email}")
-        print(f"DECODED NAME : {name}")
-        print(f"DECODED PICTURE : {picture}")
 
-        # verified_name = id_info['name']
-        # verified_image = id_info['picture']
-
-
-        # if verified_email != email:
-        #     # Invalid email in the token
-        #     return Response({"error": "Invalid social login credentials."}, status=status.HTTP_401_UNAUTHORIZED)
-
-        # Check if the email already exists
         existing_customer = Customer.objects.filter(email=email).first()
-        print(existing_customer)
+
         if existing_customer:
-            token_data = generate_jwt_token(user)
-            # Email exists, attempt login
-            print("USER EXISTO")
-            # user = authenticate(username=email, password='')  # No password needed for social login
-            # print(f"USER AUTHO : {user}")
-            # if user is not None:
-            #     # Login successful
-            #     if user.username == "oem":
-            #         role = 'admin'
-            #     else:
-            #         role = 'user'
-            #
-            #     token = RefreshToken.for_user(user).access_token
-            #     return Response({"token": token, "role": role, "is_authenticated": True})
-            # else:
-            #     # Invalid credentials
-            #     return Response({"error": "Invalid social login credentials.", "is_authenticated": False}, status=status.HTTP_401_UNAUTHORIZED)
+            token_data = get_tokens_for_user(existing_customer.user)
+            return Response(token_data, status=status.HTTP_200_OK)
         else:
-            # Email does not exist, proceed with registration
             serializer = Cust_signin_ser(data={'email': email, 'name': name})
             if serializer.is_valid():
                 customer = serializer.save()
-                MyOauthObtainToken.post(request)
-                # Generate token for the newly registered user
-                # user = authenticate(username=email, password=None)
-                # token = RefreshToken.for_user(user).access_token
-
-                # You can include the activation email logic here if needed
-
-                # Provide a success response with a redirect URL and message
-                # redirect_url = reverse('activate', args=[urlsafe_base64_encode(force_bytes(customer.pk)),
-                #                                          account_activation_token.make_token(customer)])
-                # success_message = 'Check your email to activate your account.'
-                # return Response({
-                #     # 'redirect_url': redirect_url,
-                #     'token': token,
-                #     'role': 'user',  # You may customize the role as needed
-                #     'is_authenticated': True,
-                #     'success_message': success_message,
-                # }, status=status.HTTP_201_CREATED)
+                token_data = get_tokens_for_user(customer.user)
+                return Response(token_data, status=status.HTTP_200_OK)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     except ValidationError as e:
         return JsonResponse({'error': str(e)}, status=400)
-
-    # except Exception as e:
-    #     return JsonResponse({'error': 'An error occurred while processing your request.'}, status=500)
 #################################################################################################
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -788,7 +730,7 @@ def create_order(request):
                 return Response({"msg": "Items is more than the stock"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create an Order instance
-        order_serializer = OrderSeriallizer(data={'user': user_instance, 'status': 'Processing', 'total': 0,'is_deleted': False})
+        order_serializer = OrderSeriallizer(data={'user': user_instance, 'status': 'Cancelled', 'total': 0,'is_deleted': False})
         if order_serializer.is_valid():
             order = order_serializer.save()
         else:
@@ -871,7 +813,7 @@ def cancel_order(request):
         return Response({"msg": "You are not authorized"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"msg": "Order created successfully.", "order_id": order.id}, status=status.HTTP_201_CREATED)
 
-@api_view(['POST'])
+@api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def change_order_status(request, order_id):
     try:

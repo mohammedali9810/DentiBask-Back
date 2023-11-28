@@ -150,7 +150,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         return customer
 
 class Cust_signin_ser(serializers.ModelSerializer):
-    # password = serializers.CharField(write_only=True)
+     # password =
 
     class Meta:
         model = Customer
@@ -161,14 +161,14 @@ class Cust_signin_ser(serializers.ModelSerializer):
         customer_data = {
             'name': validated_data['name'],
             'email': validated_data['email'],
-            'image': validated_data['picture'],
+            # 'image': validated_data['picture'],
         }
 
         # Extract user data
         user_data = {
             'username': validated_data['email'],
             'email': validated_data['email'],
-            'image': validated_data['picture'],
+            # 'image': validated_data['picture'],
             'is_active': True
         }
 

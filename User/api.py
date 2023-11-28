@@ -53,7 +53,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSeriallizer
     lookup_field = 'pk'
     pagination_class = CustomPagination
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
 
 class ClinicViewSet(viewsets.ModelViewSet):
@@ -690,7 +690,7 @@ def create_order(request):
                 return Response({"msg": "Items is more than the stock"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create an Order instance
-        order_serializer = OrderSeriallizer(data={'user': user_instance, 'status': 'Processing', 'total': 0,'is_deleted': False})
+        order_serializer = OrderSeriallizer(data={'user': user_instance, 'status': 'Cancelled', 'total': 0,'is_deleted': False})
         if order_serializer.is_valid():
             order = order_serializer.save()
         else:
@@ -773,7 +773,7 @@ def cancel_order(request):
         return Response({"msg": "You are not authorized"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"msg": "Order created successfully.", "order_id": order.id}, status=status.HTTP_201_CREATED)
 
-@api_view(['POST'])
+@api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def change_order_status(request, order_id):
     try:

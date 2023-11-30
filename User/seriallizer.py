@@ -162,6 +162,7 @@ class Cust_signin_ser(serializers.ModelSerializer):
             'name': validated_data['name'],
             'email': validated_data['email'],
             # 'image': validated_data['picture'],
+            'is_active': True
         }
 
         # Extract user data
